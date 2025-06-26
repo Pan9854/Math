@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>数学挑战</title>
+<title>Math Challenge</title>
 <style>
   /* 移动端优化的基础样式 */
   :root {
@@ -22,7 +22,7 @@
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(#e6f7ff, #f5f5f5);
+    background: linear-gradient(#fff8dc, #f0f8ff);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -382,8 +382,8 @@
   <svg viewBox="0 0 200 200">
     <defs>
       <linearGradient id="pikachuGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#ffcc00"/>
-        <stop offset="100%" style="stop-color:#ffdd33"/>
+        <stop offset="0%" style="stop-color:#4169e1"/>
+        <stop offset="100%" style="stop-color:#9370db"/>
       </linearGradient>
     </defs>
     <!-- 尾巴 -->
@@ -413,9 +413,6 @@
     <line x1="120" y1="170" x2="130" y2="185" stroke="#333" stroke-width="4" stroke-linecap="round"/>
   </svg>
 </div>
-
-<audio id="correctSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_a6c6bb23a8.mp3"></audio>
-<audio id="streakSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_ba2b43bb83.mp3"></audio>
 
 <script>
 // 全局变量
@@ -563,9 +560,9 @@ function generateOptions() {
 function generateSteps(a, b) {
   let base = Math.floor(b / 10) * 10;
   let add = b % 10;
-  let firstPart = `① ${a} × ${base} = ${a * base}`;
-  let secondPart = `② ${a} × ${add} = ${a * add}`;
-  let sumPart = `③ ${a * base} + ${a * add} = ${a * b}`;
+  let firstPart = `(${a} + ${add}) × 10 = ${(a + add) * 10}`;
+  let secondPart = `${a % 10} × ${add} = ${(a % 10) * add}`;
+  let sumPart = `${(a + add) * 10} + ${(a % 10) * add} = ${a * b}`;
   return [firstPart, secondPart, sumPart];
 }
 
@@ -641,7 +638,7 @@ function showAnswer() {
 function celebrate() {
   document.getElementById('buddy').classList.add('happy');
   document.getElementById('buddy').classList.remove('float', 'angry');
-  document.getElementById('correctSound').play();
+  //document.getElementById('correctSound').play();
 
   let flash = document.createElement('div');
   flash.className = 'flash';
@@ -704,7 +701,7 @@ function showKillStreak(streak) {
   document.body.appendChild(streakElement);
 
   // 播放连击音效
-  document.getElementById('streakSound').play();
+  //document.getElementById('streakSound').play();
 
   setTimeout(() => {
     if (document.body.contains(streakElement)) {
