@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Challenge Hub</title>
+    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', cursive;
+            background: linear-gradient(#f0f8ff, #e6e6fa);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin: 15px 0;
+            animation: bounce 2s infinite;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            margin: 0;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .challenges-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            width: 95%;
+            max-width: 1200px;
+            margin: 10px auto;
+            padding: 0 10px;
+        }
+
+        .challenge-button {
+            position: relative;
+            height: 80px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            text-decoration: none;
+        }
+
+        .challenge-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+
+        .challenge-button::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .challenge-button:hover::after {
+            opacity: 1;
+        }
+
+        /* Specific colors for each challenge - matched with buddy colors */
+        #challenge1 {
+            background: linear-gradient(45deg, #4169e1, #9370db);
+        }
+
+        #challenge2 {
+            background: linear-gradient(45deg, #32CD32, #00CED1);
+        }
+
+        #challenge3 {
+            background: linear-gradient(45deg, #2E8B57,#7FFF00);
+        }
+
+        #challenge4 {
+            background: linear-gradient(45deg, #FFC0CB, #FF1493);
+        }
+
+        #challenge5 {
+            background: linear-gradient(45deg, #ff9966,#ff5e62);
+        }
+
+        #challenge6 {
+            background: linear-gradient(45deg, #8A2BE2 , #FF69B4);
+        }
+
+        #challenge7 {
+            background: linear-gradient(45deg, #00CED1 , #0000FF);
+        }
+
+        #challenge8 {
+            background: linear-gradient(45deg, #8A2BE2 , #4169E1);
+        }
+
+        #challenge9 {
+            background: linear-gradient(45deg, #00CED1 , #5F9EA0);
+        }
+
+        #challenge10 {
+            background: linear-gradient(45deg, #9966ff , #3399ff);
+        }
+
+        #challenge11 {
+            background: linear-gradient(45deg, #ff9933 , #ffcc00);
+        }
+
+        #challenge12 {
+            background: linear-gradient(45deg, #98FF98 , #228B22);
+        }
+
+        #challenge13 {
+            background: linear-gradient(45deg,#87CEEB , #000080);
+        }
+
+        #challenge14 {
+            background: linear-gradient(45deg, #FF1493 , #FF7F50);
+        }
+
+        #challenge15 {
+            background: linear-gradient(45deg, #8B00FF , #4B0082);
+        }
+
+        .footer {
+            margin-top: 10px;
+            padding: 10px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .g-signin2 {
+            margin: 10px auto;
+            display: block;
+            width: 120px;
+        }
+        
+        #sign-out-button {
+            padding: 5px 10px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px auto;
+            display: block;
+        }
+
+        .mascot {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 100px;
+            height: 100px;
+            animation: float 3s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(3deg);
+            }
+            50% {
+                transform: translateY(-10px) rotate(-3deg);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .challenges-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .title {
+                font-size: 28px;
+            }
+
+            .mascot {
+                width: 80px;
+                height: 80px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .challenges-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Confetti animation */
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background-color: #f00;
+            border-radius: 50%;
+            animation: fall linear forwards;
+            z-index: -1;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">Math Challenge Hub</h1>
+        <p class="subtitle" id="welcome-message">Choose a challenge to start your math adventure!</p>
+        <div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
+        <button id="sign-out-button" style="display:none;" onclick="signOut()">Sign Out</button>
+    </div>
+
+    <div class="challenges-container">
+        <a href="math_challenges/Math Challenge 01.html" class="challenge-button" id="challenge1">
+            17 × 18
+        </a>
+        <a href="math_challenges/Math Challenge 02.html" class="challenge-button" id="challenge2">
+            23 × 27
+        </a>
+        <a href="math_challenges/Math Challenge 03.html" class="challenge-button" id="challenge3">
+            621 = ▇ × ▇ ?
+        </a>
+        <a href="math_challenges/Math Challenge 04.html" class="challenge-button" id="challenge4">
+            71 × 41
+        </a>
+        <a href="math_challenges/Math Challenge 05.html" class="challenge-button" id="challenge5">
+            45²
+        </a>
+        <a href="math_challenges/Math Challenge 06.html" class="challenge-button" id="challenge6">
+            23 × 17
+        </a>
+        <a href="math_challenges/Math Challenge 07.html" class="challenge-button" id="challenge7">
+            44²
+        </a>
+        <a href="math_challenges/Math Challenge 08.html" class="challenge-button" id="challenge8">
+            38²
+        </a>
+        <a href="math_challenges/Math Challenge 09.html" class="challenge-button" id="challenge9">
+            32²
+        </a>
+        <a href="math_challenges/Math Challenge 10.html" class="challenge-button" id="challenge10">
+            28 × 88
+        </a>
+        <a href="math_challenges/Math Challenge 11.html" class="challenge-button" id="challenge11">
+            21 × 27
+        </a>
+        <a href="math_challenges/Math Challenge 12.html" class="challenge-button" id="challenge12">
+            √(841)
+        </a>
+        <a href="math_challenges/Math Challenge 13.html" class="challenge-button" id="challenge13">
+            √(3969)
+        </a>
+        <a href="math_challenges/Math Challenge 14.html" class="challenge-button" id="challenge14">
+            8084 = ▇ × ▇ ?
+        </a>
+        <a href="math_challenges/Math Challenge 15.html" class="challenge-button" id="challenge15">
+            √(2)
+        </a>
+    </div>
+
+    <svg class="mascot" viewBox="0 0 200 250">
+        <defs>
+            <linearGradient id="mascotGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#ff6b6b"/>
+                <stop offset="100%" style="stop-color:#4ecdc4"/>
+            </linearGradient>
+        </defs>
+        <!-- Tail -->
+        <path fill="url(#mascotGradient)" d="M 40 120 L 20 150 L 25 90 Z"></path>
+        <!-- Body -->
+        <circle cx="100" cy="100" r="50" fill="url(#mascotGradient)"></circle>
+        <!-- Left Ear -->
+        <path fill="url(#mascotGradient)" d="M 70 60 L 50 20 L 85 50 Z"></path>
+        <!-- Right Ear -->
+        <path fill="url(#mascotGradient)" d="M 130 60 L 150 20 L 115 50 Z"></path>
+        <!-- Eyes -->
+        <circle cx="80" cy="90" r="10" fill="white"></circle>
+        <circle cx="120" cy="90" r="10" fill="white"></circle>
+        <circle cx="80" cy="90" r="5" fill="black"></circle>
+        <circle cx="120" cy="90" r="5" fill="black"></circle>
+        <!-- Mouth -->
+        <path id="mouth" d="M 85 110 Q 100 125 115 110" stroke="black" stroke-width="2" fill="none"></path>
+        <!-- Cheeks -->
+        <circle cx="65" cy="100" r="10" fill="#ff6b6b" opacity="0.5"></circle>
+        <circle cx="135" cy="100" r="10" fill="#ff6b6b" opacity="0.5"></circle>
+    </svg>
+
+    <div class="footer">
+        <p>© 2025 Math Challenge Hub | Learn Joyfully, Challenge Yourself</p>
+    </div>
+
+    <script>
+        // Google Sign-In related functions
+        function onSignIn(googleUser) {
+            try {
+                if (!googleUser || !googleUser.getBasicProfile) {
+                    throw new Error("Invalid Google user object.");
+                }
+
+                const profile = googleUser.getBasicProfile();
+                const userName = profile.getName();
+                const userEmail = profile.getEmail();
+
+                // Store user info with a timestamp
+                const userInfo = {
+                    name: userName,
+                    email: userEmail,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('googleUserInfo', JSON.stringify(userInfo));
+
+                console.log('User signed in: ' + userName + ', ' + userEmail);
+
+                // Update welcome message
+                updateWelcomeMessage(userName);
+
+                // Show sign out button
+                document.getElementById("sign-out-button").style.display = "block";
+            } catch (error) {
+                console.error("Google Sign-In error:", error);
+            }
+        }
+        
+        function signOut() {
+            try {
+                if (typeof gapi !== 'undefined' && gapi.auth2) {
+                    const auth2 = gapi.auth2.getAuthInstance();
+                    if (auth2) {
+                        auth2.signOut().then(() => {
+                            console.log('User signed out successfully.');
+                            localStorage.removeItem('googleUserInfo');
+                            updateWelcomeMessage();
+                            document.getElementById("sign-out-button").style.display = "none";
+                        }).catch(error => {
+                            console.error("Sign out error:", error);
+                        });
+                    } else {
+                        console.error("Google Auth API instance not available");
+                    }
+                } else {
+                    console.error("Google Auth API not loaded");
+                }
+            } catch (error) {
+                console.error("Sign out function error:", error);
+            } finally {
+                // Fallback: Clear local storage and update UI
+                if (!localStorage.getItem('googleUserInfo')) {
+                    localStorage.removeItem('googleUserInfo');
+                    updateWelcomeMessage();
+                    document.getElementById("sign-out-button").style.display = "none";
+                }
+            }
+        }
+        
+        function updateWelcomeMessage(userName) {
+            const welcomeMsg = document.getElementById("welcome-message");
+            if (userName) {
+                welcomeMsg.innerHTML = `欢迎你, ${userName}! 选择一个挑战开始你的数学冒险!`;
+            } else {
+                welcomeMsg.innerHTML = "Choose a challenge to start your math adventure!";
+            }
+        }
+        
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#4ecdc4', '#ffcc00', '#a8c0ff', '#ff9933', '#6a82fb'];
+
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+
+                    // Random position
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+                    // Random size
+                    const size = Math.random() * 8 + 4;
+                    confetti.style.width = size + 'px';
+                    confetti.style.height = size + 'px';
+
+                    // Random rotation and shape
+                    const rotation = Math.random() * 360;
+                    confetti.style.transform = `rotate(${rotation}deg)`;
+
+                    if (Math.random() > 0.6) {
+                        confetti.style.borderRadius = '0';
+                    }
+
+                    // Random animation duration
+                    const duration = Math.random() * 3 + 2;
+                    confetti.style.animationDuration = duration + 's';
+
+                    document.body.appendChild(confetti);
+
+                    // Remove confetti after animation
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, duration * 1000);
+
+                }, i * 100);
+            }
+        }
+
+        // Interactive mascot
+        const mascot = document.querySelector('.mascot');
+        const mouth = document.getElementById('mouth');
+
+        mascot.addEventListener('mouseover', () => {
+            mouth.setAttribute('d', "M 85 110 Q 100 140 115 110");
+            createConfetti();
+        });
+
+        mascot.addEventListener('mouseout', () => {
+            mouth.setAttribute('d', "M 85 110 Q 100 125 115 110");
+        });
+
+        // Animate challenge buttons on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const buttons = document.querySelectorAll('.challenge-button');
+
+            // Check for stored Google user info
+            const userInfo = localStorage.getItem('googleUserInfo');
+            if (userInfo) {
+                try {
+                    const parsedInfo = JSON.parse(userInfo);
+                    const { name, timestamp } = parsedInfo;
+
+                    // Check if session is still valid (e.g., 24 hours)
+                    const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
+                    if (Date.now() - timestamp < sessionDuration) {
+                        console.log('Restored session for user: ' + name);
+                        updateWelcomeMessage(name);
+                        document.getElementById("sign-out-button").style.display = "block";
+                    } else {
+                        console.warn("Session expired. Clearing user info.");
+                        localStorage.removeItem('googleUserInfo');
+                    }
+                } catch (error) {
+                    console.error("Error parsing user info from localStorage:", error);
+                    localStorage.removeItem('googleUserInfo');
+                }
+            }
+
+            // Reset Math Challenge data
+            localStorage.removeItem('bestScore');
+            localStorage.removeItem('bestTime');
+
+            // Animate challenge buttons
+            buttons.forEach((button, index) => {
+                button.style.opacity = '0';
+                button.style.transform = 'translateY(20px)';
+
+                setTimeout(() => {
+                    button.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    button.style.opacity = '1';
+                    button.style.transform = 'translateY(0)';
+                }, index * 50);
+            });
+        });
+    </script>
+</body>
+</html>

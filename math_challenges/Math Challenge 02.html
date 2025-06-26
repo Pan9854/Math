@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bulbasaur Math Challenge</title>
+  <style>
+    .gradient-fill {
+      fill: url(#pikachuGradient);
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Comic Sans MS', cursive;
+      background: linear-gradient(#fff8dc, #f0f8ff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    .scoreboard {
+      margin-top: 10px;
+      font-size: 20px;
+      display: flex;
+      gap: 30px;
+    }
+    .container {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 40px;
+    }
+    .left-panel, .right-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      padding: 40px;
+      text-align: center;
+      width: 400px;
+      animation: fadeIn 1s ease;
+    }
+    button {
+      background: linear-gradient(45deg, #ffcc00, #ffdd33);
+      border: none;
+      padding: 10px 20px;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 10px 5px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: linear-gradient(45deg, #ffdd33, #ffee66);
+    }
+    input[type="number"] {
+      font-size: 20px;
+      padding: 8px;
+      width: 120px;
+      margin-right: 10px;
+      border: 2px solid #ffcc00;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .input-group, .button-row {
+      margin-top: 20px;
+    }
+    #steps, #feedback {
+      margin-top: 20px;
+      font-size: 18px;
+      min-height: 24px;
+    }
+    .buddy svg {
+      width: 300px;
+      height: auto;
+    }
+    /* Bulbasaur animations */
+    .happy {
+      animation: clap 0.5s infinite alternate;
+    }
+    .angry {
+      animation: angryface 0.5s infinite alternate;
+    }
+    .blink {
+      animation: blink 3s infinite;
+    }
+    @keyframes clap {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(10deg);}
+    }
+    @keyframes angryface {
+      0% { transform: translateY(0);}
+      100% { transform: translateY(-5px);}
+    }
+    @keyframes blink {
+      0%, 100% { transform: scale(1);}
+      50% { transform: scale(0.8);}
+    }
+    /* Bulbasaur body and tail */
+    .bulbasaur {
+      width: 250px;
+      height: auto;
+    }
+    /* 开场挥手动画 */
+    .waving #leftArm {
+      animation: waveHand 0.5s ease-in-out infinite alternate;
+      transform-origin: top right;
+    }
+    @keyframes waveHand {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(30deg);}
+    }
+    /* Flash effect */
+    .kill-message {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 36px;
+      font-weight: bold;
+      background: linear-gradient(45deg, #32CD32, #00CED1);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: fadeOut 3s forwards;
+    }
+    .flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255,255,0,0.7) 0%, transparent 70%);
+      pointer-events: none;
+      animation: flashEffect 3s ease forwards;
+      z-index: 5;
+    }
+    @keyframes flashEffect {
+      0% {opacity: 1;}
+      100% {opacity: 0;}
+    }
+    .home-button {
+      position: relative;
+      margin-left: 15px;
+      background: linear-gradient(45deg, #ffcc00, #ffee66);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 100;
+    }
+
+    .home-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+
+    .home-icon {
+      width: 30px;
+      height: 30px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="scoreboard">
+  <a href="../index.html" class="home-button" title="返回主页">
+    <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+  </a>
+  <div>✅ Correct: <span id="correctCount">0</span></div>
+  <div>⭐ Best Score: <span id="bestScore">0</span></div>
+  <div>🕒 Best Time: <span id="bestTime">--</span></div>
+  <div>⏱️ Last Try: <span id="lastTryTime">--</span>s</div>
+</div>
+
+<div class="container">
+  <!-- Left Panel: Bulbasaur -->
+  <div class="left-panel">
+    <h1>🌱 Bulbasaur Math Buddy 🌱</h1>
+    <div class="buddy" id="buddy">
+      <svg viewBox="0 0 200 250">
+        <defs>
+          <linearGradient id="pikachuGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#32CD32"/>
+            <stop offset="100%" style="stop-color:#00CED1"/>
+          </linearGradient>
+        </defs>
+        <!-- Bulbasaur's body -->
+        <ellipse cx="100" cy="180" rx="70" ry="50" class="gradient-fill" stroke="black" stroke-width="3"/>
+        <!-- Bulbasaur's head -->
+        <circle cx="100" cy="80" r="40" class="gradient-fill" stroke="black" stroke-width="3"/>
+        <!-- Bulbasaur's eyes -->
+        <circle cx="80" cy="70" r="8" fill="white"/>
+        <circle cx="120" cy="70" r="8" fill="white"/>
+        <circle cx="80" cy="70" r="4" fill="black"/>
+        <circle cx="120" cy="70" r="4" fill="black"/>
+        <!-- Bulbasaur's mouth -->
+        <path d="M 80 90 Q 100 110 120 90" stroke="black" stroke-width="2" fill="none"/>
+        <!-- Bulbasaur's tail -->
+        <path d="M 160 160 Q 180 150 190 160 Q 180 170 160 160" class="gradient-fill" stroke="black" stroke-width="3"/>
+        <!-- Bulbasaur's arms -->
+        <line id="leftArm" x1="65" y1="150" x2="50" y2="130" stroke="black" stroke-width="5"/>
+        <line id="rightArm" x1="135" y1="150" x2="150" y2="130" stroke="black" stroke-width="5"/>
+        <!-- Bulbasaur's legs -->
+        <line x1="75" y1="210" x2="75" y2="230" stroke="black" stroke-width="5"/>
+        <line x1="125" y1="210" x2="125" y2="230" stroke="black" stroke-width="5"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Right Panel: Math Challenge -->
+  <div class="right-panel">
+    <div class="card">
+      <h2 id="question">Loading...</h2>
+      <div class="input-group">
+        <input type="number" id="answerInput" placeholder="Your Answer" onkeydown="if(event.key==='Enter')submitAnswer()">
+        <button id="submitButton" onclick="submitAnswer()">Submit</button>
+      </div>
+      <div id="feedback"></div>
+      <div class="button-row">
+        <button onclick="showNextStep()">Hint Step</button>
+        <button onclick="showAnswer()">Show Answer</button>
+      </div>
+      <div id="steps"></div>
+    </div>
+  </div>
+</div>
+
+<audio id="winSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_a6c6bb23a8.mp3"></audio>
+
+<script>
+let num1,num2,steps, currentStep;
+let answered = false;
+let correct = 0;
+let bestScore = localStorage.getItem('bestScore') || 0;
+let startTime = 0; // 开始时间
+let bestTime = localStorage.getItem('bestTime') ? parseFloat(localStorage.getItem('bestTime')) : null; // 最佳时间
+let lastTryTime = null; // 最后一次回答时间
+
+// 初始化显示
+document.getElementById('bestScore').innerText = bestScore;
+document.getElementById('bestTime').innerText = bestTime ? bestTime.toFixed(2) + 's' : '--';
+document.getElementById('lastTryTime').innerText = '--';
+
+let arrNum =[],arrRnd =[],arr_x=0;
+let initialRun=true;
+function RandomNumber(x1,x2) {
+  let NumLength=x2-x1;
+  let arr_i;
+
+  if (initialRun) {
+    if (arrNum.length==0) {
+      for (arr_i=0 ; arr_i<=NumLength ; arr_i++) {
+        arrNum.push({value: (x1+arr_i), flag: false });
+        //console.log('arr_i=',arr_i,',value=',arrNum[arr_i].value,',flag=',arrNum[arr_i].flag);
+      }   
+    }
+    else {
+      for (arr_i=0 ; arr_i<=NumLength ; arr_i++) {
+        arrNum[arr_i].flag=false;
+        //console.log('arr_i=',arr_i,',value=',arrNum[arr_i].value,',flag=',arrNum[arr_i].flag);
+      }
+    }
+
+    console.log('initialRun=',initialRun);
+    let arr_add=0;
+    while (arr_add<=NumLength) {
+      let rnd_i=Math.floor(Math.random() * (NumLength+1));
+      if (arrNum[rnd_i].flag==false) {
+        arrRnd[arr_add++]=arrNum[rnd_i].value;
+        arrNum[rnd_i].flag=true;
+        //console.log('arrRnd[',arr_add-1,']=',arrRnd[arr_add-1]*5);     
+      }
+    }
+    initialRun=false;
+  }
+
+  if (arr_x==NumLength) {
+    initialRun=true;
+    arr_x=0;
+    //console.log('arrRnd[',NumLength,']=',arrRnd[NumLength],',NumLength=',NumLength)
+    return arrRnd[NumLength];
+  }
+  else {      
+    //console.log('arrRnd[',arr_x,']=',arrRnd[arr_x])
+    return arrRnd[arr_x++];
+  }
+}
+
+function generateQuestion() {
+let tens = RandomNumber(1,9); // 十位数
+let ones = Math.floor(Math.random() * 9) + 1; // 个位数
+  num1 = tens * 10 + ones; // 第一个数
+  num2 = tens * 10 + (10 - ones); // 第二个数
+  document.getElementById('question').innerText = `What is ${num1} × ${num2}?`;
+  
+  // 记录开始时间
+  startTime = performance.now();
+
+  steps = generateSteps(num1, num2);
+  currentStep = 0;
+  document.getElementById('steps').innerHTML = '';
+  document.getElementById('feedback').innerHTML = '';
+  document.getElementById('answerInput').value = '';
+  document.getElementById('submitButton').innerText = "Submit";
+  answered = false;
+  resetBulbasaur();
+}
+
+// 生成速算步骤
+function generateSteps(a, b) {
+  let base = Math.floor(b / 10);
+  let add = b % 10;
+  let firstPart = `${base} x (${base} + 1) × 100 = ${base*(base + 1) * 100}`;
+  let secondPart = `${a % 10} × ${add} = ${(a % 10) * add}`;
+  let sumPart = `${base*(base + 1) * 100} + ${(a % 10) * add} = ${a * b}`;
+  return [firstPart, secondPart, sumPart];
+}
+
+function showNextStep() {
+  if (currentStep < steps.length) {
+    document.getElementById('steps').innerHTML += `<div>➡️ ${steps[currentStep]}</div>`;
+    currentStep++;
+  } else {
+    document.getElementById('steps').innerHTML += `<div>✅ Done!</div>`;
+  }
+}
+
+function submitAnswer() {
+  const userAnswer = parseInt(document.getElementById('answerInput').value);
+  const correctAnswer = num1 * num2;
+
+  if (!answered) {
+    if (isNaN(userAnswer)) {
+      document.getElementById('feedback').innerHTML = `<div style="color: orange;">Please enter a number!</div>`;
+    } else if (userAnswer === correctAnswer) {
+      document.getElementById('feedback').innerHTML = `<div style="color: green;">🎉 Correct! Great job!</div>`;
+      celebrate();
+      correct++;
+      document.getElementById('correctCount').innerText = correct;
+      if (correct > bestScore) {
+        bestScore = correct;
+        localStorage.setItem('bestScore', bestScore);
+        document.getElementById('bestScore').innerText = bestScore;
+      }
+      
+      // 计算回答时间
+      const endTime = performance.now();
+      const timeSpent = (endTime - startTime) / 1000; // 转换为秒
+      
+      // 更新最后一次尝试时间
+      lastTryTime = timeSpent;
+      document.getElementById('lastTryTime').innerText = lastTryTime.toFixed(2) + 's';
+      
+      // 更新最佳时间
+      if (bestTime === null || timeSpent < bestTime) {
+        bestTime = timeSpent;
+        localStorage.setItem('bestTime', bestTime);
+        document.getElementById('bestTime').innerText = bestTime.toFixed(2) + 's';
+      }
+    } else {
+      document.getElementById('feedback').innerHTML = `<div style="color: red;">❌ Oops! Try again!</div>`;
+      showAnswer();
+      angry();
+    }
+    document.getElementById('submitButton').innerText = "Next Question";
+    answered = true;
+  } else {
+    generateQuestion();
+  }
+}
+
+function showAnswer() {
+  document.getElementById('steps').innerHTML += `<div>🎯 Final Answer: ${num1 * num2}</div>`;
+}
+
+function celebrate() {
+  document.getElementById('buddy').classList.add('happy');
+  document.getElementById('winSound').play();
+  let flash = document.createElement('div');
+  flash.className = 'flash';
+  document.body.appendChild(flash);
+  setTimeout(() => document.body.removeChild(flash), 3000);
+}
+
+function angry() {
+  document.getElementById('buddy').classList.add('angry');
+}
+
+function resetBulbasaur() {
+  document.getElementById('buddy').classList.remove('happy', 'angry', 'waving');
+}
+
+window.onload = () => {
+  // 显示欢迎招手动画
+  document.getElementById('buddy').classList.add('waving');
+  
+  // 3秒后停止招手并生成问题
+  setTimeout(() => {
+    document.getElementById('buddy').classList.remove('waving');
+    generateQuestion();
+  }, 3000);
+};
+</script>
+
+</body>
+</html>
