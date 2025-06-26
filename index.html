@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math Challenge Hub</title>
-    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
-    <script src="https://apis.google.com/js/platform.js" async defer></script>
     <style>
         body {
             margin: 0;
@@ -160,22 +158,6 @@
             color: #666;
             font-size: 12px;
         }
-        
-        .g-signin2 {
-            margin: 10px auto;
-            display: block;
-            width: 120px;
-        }
-        
-        #sign-out-button {
-            padding: 5px 10px;
-            background-color: #f1f1f1;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px auto;
-            display: block;
-        }
 
         .mascot {
             position: fixed;
@@ -248,9 +230,7 @@
 <body>
     <div class="header">
         <h1 class="title">Math Challenge Hub</h1>
-        <p class="subtitle" id="welcome-message">Choose a challenge to start your math adventure!</p>
-        <div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
-        <button id="sign-out-button" style="display:none;" onclick="signOut()">Sign Out</button>
+        <p class="subtitle">Choose a challenge to start your math adventure!</p>
     </div>
 
     <div class="challenges-container">
@@ -333,77 +313,6 @@
     </div>
 
     <script>
-        // Google Sign-In related functions
-        function onSignIn(googleUser) {
-            try {
-                if (!googleUser || !googleUser.getBasicProfile) {
-                    throw new Error("Invalid Google user object.");
-                }
-
-                const profile = googleUser.getBasicProfile();
-                const userName = profile.getName();
-                const userEmail = profile.getEmail();
-
-                // Store user info with a timestamp
-                const userInfo = {
-                    name: userName,
-                    email: userEmail,
-                    timestamp: Date.now()
-                };
-                localStorage.setItem('googleUserInfo', JSON.stringify(userInfo));
-
-                console.log('User signed in: ' + userName + ', ' + userEmail);
-
-                // Update welcome message
-                updateWelcomeMessage(userName);
-
-                // Show sign out button
-                document.getElementById("sign-out-button").style.display = "block";
-            } catch (error) {
-                console.error("Google Sign-In error:", error);
-            }
-        }
-        
-        function signOut() {
-            try {
-                if (typeof gapi !== 'undefined' && gapi.auth2) {
-                    const auth2 = gapi.auth2.getAuthInstance();
-                    if (auth2) {
-                        auth2.signOut().then(() => {
-                            console.log('User signed out successfully.');
-                            localStorage.removeItem('googleUserInfo');
-                            updateWelcomeMessage();
-                            document.getElementById("sign-out-button").style.display = "none";
-                        }).catch(error => {
-                            console.error("Sign out error:", error);
-                        });
-                    } else {
-                        console.error("Google Auth API instance not available");
-                    }
-                } else {
-                    console.error("Google Auth API not loaded");
-                }
-            } catch (error) {
-                console.error("Sign out function error:", error);
-            } finally {
-                // Fallback: Clear local storage and update UI
-                if (!localStorage.getItem('googleUserInfo')) {
-                    localStorage.removeItem('googleUserInfo');
-                    updateWelcomeMessage();
-                    document.getElementById("sign-out-button").style.display = "none";
-                }
-            }
-        }
-        
-        function updateWelcomeMessage(userName) {
-            const welcomeMsg = document.getElementById("welcome-message");
-            if (userName) {
-                welcomeMsg.innerHTML = `欢迎你, ${userName}! 选择一个挑战开始你的数学冒险!`;
-            } else {
-                welcomeMsg.innerHTML = "Choose a challenge to start your math adventure!";
-            }
-        }
-        
         // Create confetti effect
         function createConfetti() {
             const colors = ['#ff6b6b', '#4ecdc4', '#ffcc00', '#a8c0ff', '#ff9933', '#6a82fb'];
@@ -462,34 +371,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             const buttons = document.querySelectorAll('.challenge-button');
 
-            // Check for stored Google user info
-            const userInfo = localStorage.getItem('googleUserInfo');
-            if (userInfo) {
-                try {
-                    const parsedInfo = JSON.parse(userInfo);
-                    const { name, timestamp } = parsedInfo;
-
-                    // Check if session is still valid (e.g., 24 hours)
-                    const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
-                    if (Date.now() - timestamp < sessionDuration) {
-                        console.log('Restored session for user: ' + name);
-                        updateWelcomeMessage(name);
-                        document.getElementById("sign-out-button").style.display = "block";
-                    } else {
-                        console.warn("Session expired. Clearing user info.");
-                        localStorage.removeItem('googleUserInfo');
-                    }
-                } catch (error) {
-                    console.error("Error parsing user info from localStorage:", error);
-                    localStorage.removeItem('googleUserInfo');
-                }
-            }
-
-            // Reset Math Challenge data
+            // 重置Math Challenge的Best Score和Best Time等数据
             localStorage.removeItem('bestScore');
             localStorage.removeItem('bestTime');
-
-            // Animate challenge buttons
+            
             buttons.forEach((button, index) => {
                 button.style.opacity = '0';
                 button.style.transform = 'translateY(20px)';
