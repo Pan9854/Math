@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Math Challenge</title>
+<style>
+  /* 移动端优化的基础样式 */
+  :root {
+    --main-color: #ffcc00;
+    --accent-color: #4169e1;
+    --correct-color: #4caf50;
+    --wrong-color: #f44336;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(#fff8dc, #f0f8ff);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    color: #333;
+  }
+
+  /* 顶部信息栏 */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: rgba(255,255,255,0.9);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  }
+
+  .back-button {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--main-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border: none;
+  }
+
+  /* 游戏容器 */
+  .game-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 15px;
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* 统计信息栏 */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 5px;
+  }
+
+  /* 问题卡片 */
+  .question-card {
+    width: 100%;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-bottom: 15px;
+    animation: fadeIn 0.3s;
+  }
+
+  .question {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  /* 选项区域 */
+  .answer-input {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .options-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+
+  .option-button {
+    padding: 15px;
+    font-size: 20px;
+    background-color: #f5f5f5;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .option-button:hover {
+    background-color: #efefef;
+  }
+
+  .option-button.selected {
+    background-color: var(--main-color);
+    border-color: var(--accent-color);
+  }
+
+  /* 按钮样式 */
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .btn-primary {
+    background: var(--main-color);
+    color: #333;
+    box-shadow: 0 4px 10px rgba(255, 204, 0, 0.3);
+  }
+
+  /* 步骤和反馈 */
+  .feedback-area {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 16px;
+    text-align: center;
+    min-height: 20px;
+  }
+
+  .steps-container {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .help-buttons {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    margin-top: 15px;
+  }
+
+  .btn-secondary {
+    background: #f1f1f1;
+    color: #333;
+    flex: 1;
+    padding: 10px;
+    font-size: 16px;
+  }
+
+  /* 步骤显示区域 */
+  .steps {
+    background: #f9f9f9;
+    border-radius: 10px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 16px;
+  }
+
+  /* 动画效果 */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  /* 正确和错误反馈样式 */
+  .correct-feedback {
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--correct-color);
+    padding: 10px;
+    border-radius: 8px;
+    animation: pulse 0.5s;
+  }
+
+  .wrong-feedback {
+    background: rgba(244, 67, 54, 0.1);
+    color: var(--wrong-color);
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  /* 皮卡丘角色 */
+  .buddy {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 70px;
+    height: 70px;
+    filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+    z-index: 10;
+    transition: transform 0.3s;
+  }
+
+  /* 连续答对提示 */
+  .streak-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 32px;
+    font-weight: bold;
+    text-align: center;
+    background: linear-gradient(45deg, var(--accent-color), #9370db);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    z-index: 1000;
+    animation: streakAnim 2s forwards;
+  }
+
+  @keyframes streakAnim {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  }
+
+  /* 浮动动画 */
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-8px) rotate(3deg); }
+  }
+
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* 开心和生气的动画 */
+  .happy {
+    animation: happy 0.5s infinite alternate;
+  }
+
+  .angry {
+    animation: angry 0.5s infinite alternate;
+  }
+
+  @keyframes happy {
+    0% { transform: rotate(-5deg); }
+    100% { transform: rotate(5deg); }
+  }
+
+  @keyframes angry {
+    0% { transform: translateY(0) scale(0.95); }
+    100% { transform: translateY(-5px) scale(1); }
+  }
+
+  /* 闪光特效 */
+  .flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,0,0.4) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 5;
+    animation: flashAnim 1.5s forwards;
+  }
+
+  @keyframes flashAnim {
+    0% { opacity: 0.8; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<!-- 顶部栏 -->
+<div class="top-bar">
+  <a href="../index.html" class="back-button">
+    <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+  </a>
+  <div>Math Challenge</div>
+  <div class="score-display"><span id="trophyDisplay"></span>Score: <span id="correctCount">0</span></div>
+</div>
+
+<!-- 游戏容器 -->
+<div class="game-container">
+  <!-- 统计信息 -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div>Best Score:</div>
+      <div class="stat-value" id="bestScore">0</div>
+    </div>
+    <div class="stat-card">
+      <div>Best Time:</div>
+      <div class="stat-value" id="bestTime">--</div>
+    </div>
+    <div class="stat-card">
+      <div>Last Try:</div>
+      <div class="stat-value" id="lastTryTime">--</div>
+    </div>
+    <div class="stat-card">
+      <div>Continue Correct</div>
+      <div class="stat-value" id="killStreak">0</div>
+    </div>
+  </div>
+
+  <!-- 问题卡片 -->
+  <div class="question-card">
+    <div class="question" id="question">Loading...</div>
+
+    <div class="answer-input">
+      <div class="options-container" id="optionsContainer">
+        <!-- 选项将通过JavaScript动态生成 -->
+      </div>
+    </div>
+
+    <div id="feedback" class="feedback-area"></div>
+
+    <div class="help-buttons">
+      <button class="btn btn-secondary" onclick="showNextStep()">Hint Step</button>
+      <button class="btn btn-secondary" onclick="showAnswer()">Show Answer</button>
+    </div>
+
+    <div id="steps" class="steps"></div>
+  </div>
+</div>
+
+<!-- 皮卡丘伙伴 -->
+<div class="buddy float" id="buddy">
+  <svg viewBox="0 0 200 250">
+    <defs>
+      <linearGradient id="pikachuGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#32CD32"/>
+        <stop offset="100%" style="stop-color:#00CED1"/>
+      </linearGradient>
+    </defs>
+     <!-- Bulbasaur's body -->
+     <ellipse cx="100" cy="180" rx="70" ry="50" fill="url(#pikachuGradient)" stroke="black" stroke-width="3"/>
+     <!-- Bulbasaur's head -->
+     <circle cx="100" cy="80" r="40" fill="url(#pikachuGradient)" stroke="black" stroke-width="3"/>
+     <!-- Bulbasaur's eyes -->
+     <circle cx="80" cy="70" r="8" fill="white"/>
+     <circle cx="120" cy="70" r="8" fill="white"/>
+     <circle cx="80" cy="70" r="4" fill="black"/>
+     <circle cx="120" cy="70" r="4" fill="black"/>
+     <!-- Bulbasaur's mouth -->
+     <path id="mouth" d="M 80 90 Q 100 110 120 90" stroke="black" stroke-width="2" fill="none"/>
+     <!-- Bulbasaur's tail -->
+     <path d="M 160 160 Q 180 150 190 160 Q 180 170 160 160" fill="url(#pikachuGradient)" stroke="black" stroke-width="3"/>
+     <!-- Bulbasaur's arms -->
+     <line id="leftArm" x1="65" y1="150" x2="50" y2="130" stroke="black" stroke-width="5"/>
+     <line id="rightArm" x1="135" y1="150" x2="150" y2="130" stroke="black" stroke-width="5"/>
+     <!-- Bulbasaur's legs -->
+     <line x1="75" y1="210" x2="75" y2="230" stroke="black" stroke-width="5"/>
+     <line x1="125" y1="210" x2="125" y2="230" stroke="black" stroke-width="5"/>
+     </svg>
+</div>
+
+<script>
+// 全局变量
+let num1, num2, steps, currentStep;
+let answered = false;
+let correct = 0;
+let bestScore = localStorage.getItem('bestScore') || 0;
+let killStreak = 0;
+let startTime = 0;
+let bestTime = localStorage.getItem('bestTime') ? parseFloat(localStorage.getItem('bestTime')) : null;
+let lastTryTime = null;
+let selectedOption = null;
+let correctAnswerIndex = null;
+
+// 显示初始化的值
+document.getElementById('bestScore').innerText = bestScore;
+document.getElementById('bestTime').innerText = bestTime ? bestTime.toFixed(2) + 's' : '--';
+document.getElementById('lastTryTime').innerText = '--';
+document.getElementById('killStreak').innerText = '0';
+
+// 随机数生成算法 - 避免重复出题
+let arrNum = [], arrRnd = [], arr_x = 0;
+let initialRun = true;
+
+function RandomNumber(x1, x2) {
+  let NumLength = x2 - x1;
+  let arr_i;
+
+  if (initialRun) {
+    if (arrNum.length == 0) {
+      for (arr_i = 0; arr_i <= NumLength; arr_i++) {
+        arrNum.push({value: (x1 + arr_i), flag: false});
+      }
+    } else {
+      for (arr_i = 0; arr_i <= NumLength; arr_i++) {
+        arrNum[arr_i].flag = false;
+      }
+    }
+
+    let arr_add = 0;
+    while (arr_add <= NumLength) {
+      let rnd_i = Math.floor(Math.random() * (NumLength + 1));
+      if (arrNum[rnd_i].flag == false) {
+        arrRnd[arr_add++] = arrNum[rnd_i].value;
+        arrNum[rnd_i].flag = true;
+      }
+    }
+    initialRun = false;
+  }
+
+  if (arr_x == NumLength) {
+    initialRun = true;
+    arr_x = 0;
+    return arrRnd[NumLength];
+  } else {
+    return arrRnd[arr_x++];
+  }
+}
+// 生成题目
+function generateQuestion() {
+let tens = RandomNumber(1,9); // 十位数
+let ones = Math.floor(Math.random() * 9) + 1; // 个位数
+  num1 = tens * 10 + ones; // 第一个数
+  num2 = tens * 10 + (10 - ones); // 第二个数
+  document.getElementById('question').innerText = `${num1} × ${num2} = ?`;
+  steps = generateSteps(num1, num2);
+  currentStep = 0;
+  document.getElementById('steps').innerHTML = '';
+  document.getElementById('feedback').innerHTML = '';
+  // 提交按钮已移除
+  answered = false;
+  resetPikachu();
+  
+  // 生成选项
+  generateOptions();
+  
+  // 记录开始时间
+  startTime = performance.now();
+}
+
+// 生成选项
+function generateOptions() {
+  const correctAnswer = num1 * num2;
+  const optionsContainer = document.getElementById('optionsContainer');
+  optionsContainer.innerHTML = '';
+  
+  // 生成3个干扰项
+  let options = [correctAnswer];
+  let AnswerAdd = -1;
+  while (options.length < 4) {
+    // 生成接近正确答案的干扰项
+    //console.log('当前正确答案:', correctAnswer);
+    let wrongAnswer = correctAnswer + 100 * Math.floor(Math.random() * 4 - 2);
+    if (wrongAnswer == correctAnswer || wrongAnswer <= 0) {
+      wrongAnswer = correctAnswer + Math.floor(Math.random() * 10)*10; // 确保干扰项为正数
+    }
+    // 确保不重复且不等于正确答案
+    if (wrongAnswer !== correctAnswer && !options.includes(wrongAnswer) && wrongAnswer > 0) {
+      options.push(wrongAnswer);
+    }
+  }
+  
+  // 随机打乱选项顺序
+  options = options.sort(() => Math.random() - 0.5);
+  
+  // 记录正确答案的索引
+  correctAnswerIndex = options.indexOf(correctAnswer);
+  
+  // 创建选项按钮
+  options.forEach((option, index) => {
+    const button = document.createElement('div');
+    button.className = 'option-button';
+    button.textContent = option;
+    button.dataset.index = index;
+    
+    button.addEventListener('click', function() {
+      if (answered) {
+        // 如果已经回答过，点击任何选项都进入下一题
+        generateQuestion();
+        return;
+      }
+
+      // 清除所有选中状态
+      document.querySelectorAll('.option-button').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+      
+      // 设置当前选中状态
+      this.classList.add('selected');
+      selectedOption = parseInt(this.dataset.index);
+      
+      // 直接提交答案
+      submitAnswer();
+    });
+    
+    optionsContainer.appendChild(button);
+  });
+  
+  // 重置选中状态和答案状态
+  selectedOption = null;
+  
+  // 添加提示信息，告知用户点击选项即可作答
+  document.getElementById('feedback').innerHTML = '<div class="info-feedback">Select an Answer to Start!</div>';
+}
+
+// 生成解题步骤
+function generateSteps(a, b) {
+  let base = Math.floor(b / 10);
+  let add = b % 10;
+  let firstPart = `${base} x (${base} + 1) × 100 = ${base*(base + 1) * 100}`;
+  let secondPart = `${a % 10} × ${add} = ${(a % 10) * add}`;
+  let sumPart = `${base*(base + 1) * 100} + ${(a % 10) * add} = ${a * b}`;
+  return [firstPart, secondPart, sumPart];
+}
+
+// 显示下一个提示步骤
+function showNextStep() {
+  if (currentStep < steps.length) {
+    document.getElementById('steps').innerHTML +=`<div>➡️ ${steps[currentStep]}</div>`;
+    currentStep++;
+  } else {
+    document.getElementById('steps').innerHTML += `<div>✅ Done!</div>`;
+  }
+}
+
+// 提交答案
+function submitAnswer() {
+  const correctAnswer = num1 * num2;
+
+  if (!answered) {
+    if (selectedOption === null) {
+      document.getElementById('feedback').innerHTML = `<div class="wrong-feedback">Select an Answer!</div>`;
+    } else if (selectedOption === correctAnswerIndex) {
+      // 计算回答时间
+      const endTime = performance.now();
+      const timeSpent = (endTime - startTime) / 1000; // 转换为秒
+
+      // 更新最后一次尝试时间
+      lastTryTime = timeSpent;
+      document.getElementById('lastTryTime').innerText = lastTryTime.toFixed(2) + 's';
+
+      // 更新最佳时间
+      if (bestTime === null || timeSpent < bestTime) {
+        bestTime = timeSpent;
+        localStorage.setItem('bestTime', bestTime);
+        document.getElementById('bestTime').innerText = bestTime.toFixed(2) + 's';
+      }
+
+      document.getElementById('feedback').innerHTML = `<div style="color: green;">🎉 Correct! Great job! </div>`;
+      celebrate();
+      correct++;
+      killStreak++;
+      document.getElementById('correctCount').innerText = correct;
+       // 每5分显示一个奖杯
+      const trophyCount = Math.floor(correct / 5);
+      document.getElementById('trophyDisplay').innerText = trophyCount > 0 ? '🏅'.repeat(trophyCount) + ' ' : '';
+      document.getElementById('killStreak').innerText = killStreak;
+
+      if (killStreak >= 2) {
+        showKillStreak(killStreak);
+      }
+
+      if (correct > bestScore) {
+        bestScore = correct;
+        localStorage.setItem('bestScore', bestScore);
+        document.getElementById('bestScore').innerText = bestScore;
+      }
+    } else {
+      document.getElementById('feedback').innerHTML = `<div style="color: red;">❌ Oops! Try again!</div>`;
+      showAnswer();
+      angry();
+      killStreak = 0;
+      document.getElementById('killStreak').innerText = '0';
+    }
+    // 设置已回答状态，点击任何选项都将进入下一题
+    answered = true;
+  } else {
+    generateQuestion();
+  }
+}
+
+// 显示答案
+function showAnswer() {
+  document.getElementById('steps').innerHTML += `<div>🎯 Final Answer: ${num1 * num2}</div>`;
+}
+
+// 庆祝动画
+function celebrate() {
+  document.getElementById('buddy').classList.add('happy');
+  document.getElementById('buddy').classList.remove('float', 'angry');
+  //document.getElementById('correctSound').play();
+
+  let flash = document.createElement('div');
+  flash.className = 'flash';
+  document.body.appendChild(flash);
+  setTimeout(() => {
+    if (document.body.contains(flash)) {
+      document.body.removeChild(flash);
+    }
+  }, 1500);
+
+  setTimeout(() => {
+    document.getElementById('buddy').classList.remove('happy');
+    document.getElementById('buddy').classList.add('float');
+  }, 2000);
+}
+
+// 不开心动画
+function angry() {
+  document.getElementById('buddy').classList.add('angry');
+  document.getElementById('buddy').classList.remove('float', 'happy');
+  document.getElementById('mouth').setAttribute('d', "M 85 90 Q 100 80 115 90");
+
+  setTimeout(() => {
+    document.getElementById('buddy').classList.remove('angry');
+    document.getElementById('buddy').classList.add('float');
+  }, 2000);
+}
+
+// 重置皮卡丘状态
+function resetPikachu() {
+  document.getElementById('buddy').className = 'buddy float';
+  document.getElementById('mouth').setAttribute('d', "M 85 85 Q 100 95 115 85");
+}
+
+// 显示连续答对提示
+function showKillStreak(streak) {
+  let streakMessages = {
+    2: 'Double Kill!',
+    3: 'Triple Kill!',
+    4: 'Quadra Kill!',
+    5: 'Penta Kill!',
+    10: 'Unstoppable!',
+    15: 'Dominating!',
+    20: 'Godlike!',
+    30: 'Legendary!'
+  };
+
+  // 只在特定的连击数显示消息
+  let message = '';
+  if (streak in streakMessages) {
+    message = streakMessages[streak];
+  } else if (streak > 20 && streak % 5 === 0) {
+    message = `${streak} Correct Answers! Keep it up!`;
+  } else {
+    return; // 不显示消息
+  }
+
+  let streakElement = document.createElement('div');
+  streakElement.className = 'streak-message';
+  streakElement.innerText = message;
+  document.body.appendChild(streakElement);
+
+  // 播放连击音效
+  //document.getElementById('streakSound').play();
+
+  setTimeout(() => {
+    if (document.body.contains(streakElement)) {
+      document.body.removeChild(streakElement);
+    }
+  }, 2000);
+}
+
+// 页面载入
+window.onload = () => {
+  document.getElementById('buddy').classList.add('float');
+  setTimeout(() => {
+    generateQuestion();
+  }, 500);
+
+  // 添加触摸反馈
+  const buttons = document.querySelectorAll('.btn');
+  buttons.forEach(button => {
+    button.addEventListener('touchstart', function() {
+      this.style.transform = 'scale(0.97)';
+    });
+    button.addEventListener('touchend', function() {
+      this.style.transform = 'scale(1)';
+    });
+  });
+};
+</script>
+</body>
+</html>
