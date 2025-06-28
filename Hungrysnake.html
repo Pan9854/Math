@@ -106,8 +106,7 @@
             alert("I don't know if you play this game before but your not ment to touch the walls~")
             alert("I'am trying my best out here man")
             return;
-        }
-        if (isPointOnSnake(newSnakeHeadX, newSnakeHeadY)){
+        }else if (isPointOnSnake(newSnakeHeadX, newSnakeHeadY)){
             clearInterval(id);
             alert("Game is over, try again ~");
             alert("Dude whe're gonna lose ~");
