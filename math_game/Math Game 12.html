@@ -517,7 +517,7 @@ function generateOptions() {
   while (options.length < 4) {
     // 生成接近正确答案的干扰项
     //console.log('当前正确答案:', correctAnswer);
-    let wrongAnswer = correctAnswer + 10 * Math.floor(Math.random() * 4 - 2);
+    let wrongAnswer = correctAnswer + Math.floor(Math.random() * 4 - 2);
     if (wrongAnswer == correctAnswer || wrongAnswer <= 0) {
       wrongAnswer = correctAnswer + Math.floor(Math.random() * 10); // 确保干扰项为正数
     }
