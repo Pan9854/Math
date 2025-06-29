@@ -9,8 +9,7 @@
 
     <tr>
         <td>
-            <img width="65" height="60"
-                src="https://png.pngtree.com/png-vector/20200616/ourmid/pngtree-start-button-circle-shape-in-glowing-blue-png-image_2256289.jpg"
+            <img onclick= "restart()" width="65" height="60" src="https://png.pngtree.com/png-vector/20200616/ourmid/pngtree-restart-button-circle-shape-in-glowing-blue-png-image_2256288.jpg"9.jpg"
                 alt="">
         </td>
         <td>Meow 相关问题</td>
@@ -31,9 +30,10 @@
 
 
 <script>
-    let direction = "ArrowRight";
+     let direction = "ArrowRight";
     let keyDownFlag = false;
     let score = 0;
+    let color = "yellow"
 
     let canvas = document.getElementById("canvas").getContext("2d");
     canvas.fillStyle = 'white';
@@ -74,7 +74,6 @@
 
     let food = { x: 10, y: 10 }
     drawBox(food.x, food.y, "black");
-
 
     function snakeMove() {
 
@@ -131,17 +130,28 @@
             drawBox(food.x, food.y, "black");
             
             let n = Math.floor(Math.random()* 3);
-            let color = "yellow"
+
+            if(color == "yellow")
+                score += 10
+            else if(color == "purple")
+                score += 10
+            else if(color == "lime")
+                score += 100
+            else if(color == "blue")
+                score += 1000
+
             if(n == 0){
-                id = color = "purple"
+                color = "purple"
             }else if(n == 1){
-                id = color = "green"
+                color = "lime"
             }else{
-                id = color = "blue"
+                color = "blue"
             }
+
+    
+
             drawBox(food.x, food.y, color)
             
-            score += 100
             document.getElementById("htmlScore").innerHTML = "Score: "+ score;
 
         } else {
@@ -185,5 +195,47 @@
         keyDownFlag = true;
     }
     document.onkeydown = keyDown
+
+    function restart(){
+        alert("Restarting the game...");
+        
+     direction = "ArrowRight";
+    keyDownFlag = false;
+    score = 0;
+    color = "yellow"
+
+     canvas = document.getElementById("canvas").getContext("2d");
+    canvas.fillStyle = 'white';
+    for (let i = 0; i < 20; i++) {
+        for (let j = 0; j < 20; j++) {
+            canvas.fillRect(i * 20 + 1, j * 20 + 1, 18, 18);
+        }
+    }
+
+
+     snake = [
+        { x: 4, y: 2 },
+        { x: 3, y: 2 },
+        { x: 2, y: 2 }
+    ];
+
+    for (let i = 0; i < snake.length; i++) {
+        drawBox(snake[i].x, snake[i].y, "green")
+    }
+
+    drawBox(snake[0].x, snake[0].y, "red");
+
+     food = { x: 10, y: 10 }
+    drawBox(food.x, food.y, "black");
+    document.getElementById("htmlScore").innerHTML = "Score: "+ score;
+
+    clearInterval(id);
+    if(id) {
+        
+    }
+    id = setInterval(snakeMove, 250)
+
+;
+    }
 
 </script>
