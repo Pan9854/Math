@@ -431,7 +431,7 @@ let selectedOption = null;
 let correctAnswerIndex = null;
 
 // 计时器相关变量
-let gameTimeInSeconds = 60; // 5分钟 = 300秒
+let gameTimeInSeconds = 90; // 5分钟 = 300秒
 let remainingTimeInSeconds = gameTimeInSeconds;
 let timerInterval = null;
 let gameActive = false;
@@ -482,7 +482,7 @@ function RandomNumber(x1, x2) {
 }
 // 生成题目
 function generateQuestion() {
-  num1 = RandomNumber(1, 20);
+  num1 = RandomNumber(1, 15);
   num2 = 8;
   document.getElementById('question').innerText = `${num1} × ${num2} = ?`;
   steps = generateSteps(num1, num2);
@@ -515,7 +515,7 @@ function generateOptions() {
     let wrongAnswer = correctAnswer + 10 * Math.floor(Math.random() * 4 - 2);
     //console.log('当前正确答案:', correctAnswer,'wrongAnswer:', wrongAnswer);
     if (wrongAnswer == correctAnswer || wrongAnswer <= 0) {
-      wrongAnswer = correctAnswer + num2 * Math.floor(Math.random() * 4+1); // 确保干扰项为正数
+      wrongAnswer = correctAnswer + num2 *Math.floor(Math.random() * 4+1); // 确保干扰项为正数
     }
     // 确保不重复且不等于正确答案
     if (wrongAnswer !== correctAnswer && !options.includes(wrongAnswer) && wrongAnswer > 0) {
@@ -782,12 +782,19 @@ function showGameOverScreen() {
   message.style.marginBottom = '30px';
   message.textContent = 'Time Over!';
   
+    // 显示结束
+  const endMsg = document.createElement('div');
+  endMsg.style.color = '#ffcc00';
+  endMsg.style.fontSize = '24px';
+  endMsg.style.marginBottom = '30px';
+  endMsg.textContent = `Congratulations!`;
+
   // 显示总分
   const scoreMsg = document.createElement('div');
   scoreMsg.style.color = '#ffcc00';
   scoreMsg.style.fontSize = '24px';
   scoreMsg.style.marginBottom = '30px';
-  scoreMsg.textContent = `Congratulations!You got ${correct} correct and ${Math.floor(Totalscore*10)} points!`;
+  scoreMsg.textContent = `You got ${correct} correct and ${Math.floor(Totalscore*10)} points!`;
   
   // 创建按钮容器
   const buttonContainer = document.createElement('div');
@@ -819,6 +826,7 @@ function showGameOverScreen() {
   buttonContainer.appendChild(nextButton);
   overlay.appendChild(message);
   overlay.appendChild(pikachuClone);
+  overlay.appendChild(endMsg);
   overlay.appendChild(scoreMsg);
   overlay.appendChild(buttonContainer);
   document.body.appendChild(overlay);
