@@ -389,8 +389,8 @@
   <svg viewBox="0 0 200 250">
     <defs>
       <linearGradient id="pikachuGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#4169e1"/>
-        <stop offset="100%" style="stop-color:#9370db"/>
+        <stop offset="0%" style="stop-color:#98FF98"/>
+        <stop offset="100%" style="stop-color:#228B22"/>
       </linearGradient>
     </defs>
     <!-- 尾巴 -->
@@ -431,7 +431,7 @@ let selectedOption = null;
 let correctAnswerIndex = null;
 
 // 计时器相关变量
-let gameTimeInSeconds = 90; // 5分钟 = 300秒
+let gameTimeInSeconds = 180; // 5分钟 = 300秒
 let remainingTimeInSeconds = gameTimeInSeconds;
 let timerInterval = null;
 let gameActive = false;
@@ -482,10 +482,15 @@ function RandomNumber(x1, x2) {
 }
 // 生成题目
 function generateQuestion() {
-  num1 = RandomNumber(1, 15);
-  num2 = Math.floor(Math.random() * 9) + 1;
-  document.getElementById('question').innerText = `${num1} × ${num2} = ?`;
-  steps = generateSteps(num1, num2);
+  // 记录开始时间
+  startTime = performance.now();
+  
+  //num1 = (Math.floor(Math.random() * 18) + 2)*5;
+  basenum=RandomNumber(10,31);
+  num1=basenum*basenum;
+  document.getElementById('question').innerText = `What is √(${num1})?`;
+  //console.log('num1 =',num1);
+  steps = generateSteps(num1);
   currentStep = 0;
   document.getElementById('steps').innerHTML = '';
   document.getElementById('feedback').innerHTML = '';
@@ -502,7 +507,7 @@ function generateQuestion() {
 
 // 生成选项
 function generateOptions() {
-  const correctAnswer = num1 * num2;
+  const correctAnswer = Math.sqrt(num1);
   const optionsContainer = document.getElementById('optionsContainer');
   optionsContainer.innerHTML = '';
   
@@ -513,9 +518,8 @@ function generateOptions() {
     // 生成接近正确答案的干扰项
     //console.log('当前正确答案:', correctAnswer);
     let wrongAnswer = correctAnswer + 10 * Math.floor(Math.random() * 4 - 2);
-    //console.log('当前正确答案:', correctAnswer,'wrongAnswer:', wrongAnswer);
     if (wrongAnswer == correctAnswer || wrongAnswer <= 0) {
-      wrongAnswer = correctAnswer + 10 * (Math.floor(Math.random() * 4) + 1); // 确保干扰项为正数
+      wrongAnswer = correctAnswer + Math.floor(Math.random() * 10); // 确保干扰项为正数
     }
     // 确保不重复且不等于正确答案
     if (wrongAnswer !== correctAnswer && !options.includes(wrongAnswer) && wrongAnswer > 0) {
@@ -567,9 +571,119 @@ function generateOptions() {
 }
 
 // 生成解题步骤
-function generateSteps(a, b) {
-  let sumPart = `${a} x ${b} = ${a * b}`;
-  return [sumPart];
+function generateSteps(a) {
+  let firstPart,secondPart,thirdPart,fouthPart,fifthPart,sixthPart,seventhPart,eigthPart,ninthPart,tenthPart,sumPart;
+  let formulaPart;
+  let sqrta=Math.sqrt(a);
+  let sqrtbase = Math.floor(sqrta / 10)*10;
+  let sqrtadd = sqrta % 10;
+  let percent_a = Math.floor(a / 100);
+  let percent_base = Math.floor(sqrtbase / 10);
+  let str=' < ';
+
+  //if (sqrta>=10 & sqrta<=31){
+  //console.log('sqrtbase =',sqrtbase,',sqrta =',sqrta);
+  if (percent_a==(percent_base*percent_base) & sqrta>sqrtbase) {
+      str=' ≤ ';
+  }
+  else if (percent_a==percent_base*(percent_base+1) & sqrta>sqrtbase+5) {
+      str=' ≤ ';
+  }
+
+  if (sqrta>=10){
+    if (sqrta==sqrtbase) {
+        firstPart = `${percent_base}² = ${percent_base * percent_base}`;
+        secondPart = `${sqrtbase}² = ${sqrtbase * sqrtbase}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,sumPart];
+    }
+    else if (sqrta==(sqrtbase+5)) {
+        firstPart = `${percent_a} = ${percent_base} × ${percent_base+1}`;
+        secondPart =`${sqrtbase+5}² = ${percent_base} × ${percent_base+1} x 100 + 25 = ${(sqrtbase+5) * (sqrtbase+5)}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,sumPart];
+    }
+    else if (sqrta==(sqrtbase+1)){
+        firstPart = `${percent_base}² ${str} ${percent_a} < ${percent_base} × ${percent_base+1}`;
+        secondPart =`${sqrtbase}² < ${a} < ${sqrtbase+5}²`;
+        thirdPart =`${sqrtbase+1}² ≈ ${sqrtbase}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*2}`;
+        fouthPart =`${sqrtbase+1}² = ${sqrtbase*sqrtbase+sqrtbase*2} + 1² = ${(sqrtbase+1)*(sqrtbase+1)}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,thirdPart,fouthPart,sumPart];
+    }
+    if (sqrta==(sqrtbase+2)){
+        firstPart = `${percent_base}² ${str} ${percent_a} < ${percent_base} × ${percent_base+1}`;
+        secondPart =`${sqrtbase}² < ${a} < ${sqrtbase+5}²`;
+        thirdPart =`${sqrtbase+1}² ≈ ${sqrtbase}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*2}`;
+        fouthPart =`${sqrtbase+2}² ≈ ${sqrtbase+1}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*4}`;
+        fifthPart =`${sqrtbase+2}² = ${sqrtbase*sqrtbase+sqrtbase*4} + 2² = ${(sqrtbase+2)*(sqrtbase+2)}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,thirdPart,fouthPart,fifthPart,sumPart];
+    }
+    if (sqrta==(sqrtbase+3)){
+        firstPart = `${percent_base}² ${str} ${percent_a} < ${percent_base} × ${percent_base+1}`;
+        secondPart =`${sqrtbase}² < ${a} < ${sqrtbase+5}²`;
+        thirdPart =`${sqrtbase+1}² ≈ ${sqrtbase}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*2}`;
+        fouthPart =`${sqrtbase+2}² ≈ ${sqrtbase+1}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*4}`;
+        fifthPart =`${sqrtbase+3}² ≈ ${sqrtbase+2}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*6}`;
+        sixthPart =`${sqrtbase+3}² = ${sqrtbase*sqrtbase+sqrtbase*6} + 3² = ${(sqrtbase+3)*(sqrtbase+3)}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,thirdPart,fouthPart,fifthPart,sixthPart,sumPart];
+    }
+    if (sqrta==(sqrtbase+4)){
+        firstPart = `${percent_base}² ${str} ${percent_a} < ${percent_base} × ${percent_base+1}`;
+        secondPart =`${sqrtbase}² < ${a} < ${sqrtbase+5}²`;
+        thirdPart =`${sqrtbase+1}² ≈ ${sqrtbase}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*2}`;
+        fouthPart =`${sqrtbase+2}² ≈ ${sqrtbase+1}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*4}`;
+        fifthPart =`${sqrtbase+3}² ≈ ${sqrtbase+2}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*6}`;
+        sixthPart =`${sqrtbase+4}² ≈ ${sqrtbase+3}² + ${sqrtbase} × 2 = ${sqrtbase*sqrtbase+sqrtbase*8}`;
+        seventhPart =`${sqrtbase+4}² = ${sqrtbase*sqrtbase+sqrtbase*8} + 4² = ${(sqrtbase+4)*(sqrtbase+4)}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,thirdPart,fouthPart,fifthPart,sixthPart,seventhPart,sumPart];
+    }
+    if (sqrta==(sqrtbase+6)){
+        firstPart = `${percent_base} × ${percent_base+1} ${str} ${percent_a} < ${percent_base+1}²`;
+        secondPart =`${sqrtbase+5}² < ${a} < ${sqrtbase+10}²`;
+        thirdPart =`${sqrtbase+5}² = ${percent_base} × ${percent_base+1} x 100 + 25= ${(sqrtbase+5) * (sqrtbase+5)}`;
+        fouthPart =`${sqrtbase+6}² ≈ ${sqrtbase+5}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*2}`;
+        fifthPart =`${sqrtbase+6}² = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*2} + 1² = ${(sqrtbase+6)*(sqrtbase+6)}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,thirdPart,fouthPart,fifthPart,sumPart];
+    }
+    if (sqrta==(sqrtbase+7)){
+        firstPart = `${percent_base} × ${percent_base+1} ${str} ${percent_a} < ${percent_base+1}²`;
+        secondPart =`${sqrtbase+5}² < ${a} < ${sqrtbase+10}²`;
+        thirdPart =`${sqrtbase+5}² = ${percent_base} × ${percent_base+1} x 100 + 25= ${(sqrtbase+5) * (sqrtbase+5)}`;
+        fouthPart =`${sqrtbase+6}² ≈ ${sqrtbase+5}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*2}`;
+        fifthPart =`${sqrtbase+7}² ≈ ${sqrtbase+6}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*4}`;
+        sixthPart =`${sqrtbase+7}² = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*4} + 2² = ${(sqrtbase+7)*(sqrtbase+7)}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,thirdPart,fouthPart,fifthPart,sixthPart,sumPart];
+    }
+    if (sqrta==(sqrtbase+8)){
+        firstPart = `${percent_base} × ${percent_base+1} ${str} ${percent_a} < ${percent_base+1}²`;
+        secondPart =`${sqrtbase+5}² < ${a} < ${sqrtbase+10}²`;
+        thirdPart =`${sqrtbase+5}² = ${percent_base} × ${percent_base+1} x 100 + 25= ${(sqrtbase+5) * (sqrtbase+5)}`;
+        fouthPart =`${sqrtbase+6}² ≈ ${sqrtbase+5}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*2}`;
+        fifthPart =`${sqrtbase+7}² ≈ ${sqrtbase+6}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*4}`;
+        sixthPart =`${sqrtbase+8}² ≈ ${sqrtbase+7}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*6}`;
+        seventhPart =`${sqrtbase+8}² = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*6} + 3² = ${(sqrtbase+8)*(sqrtbase+8)}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,thirdPart,fouthPart,fifthPart,sixthPart,seventhPart,sumPart];
+    }
+    if (sqrta==(sqrtbase+9)){
+        firstPart = `${percent_base} × ${percent_base+1} ${str} ${percent_a} < ${percent_base+1}²`;
+        secondPart =`${sqrtbase+5}² < ${a} < ${sqrtbase+10}²`;
+        thirdPart =`${sqrtbase+5}² = ${percent_base} × ${percent_base+1} x 100 + 25= ${(sqrtbase+5) * (sqrtbase+5)}`;
+        fouthPart =`${sqrtbase+6}² ≈ ${sqrtbase+5}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*2}`;
+        fifthPart =`${sqrtbase+7}² ≈ ${sqrtbase+6}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*4}`;
+        sixthPart =`${sqrtbase+8}² ≈ ${sqrtbase+7}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*6}`;
+        seventhPart =`${sqrtbase+9}² ≈ ${sqrtbase+8}² + ${(sqrtbase+5)} × 2 = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*8}`;
+        eigthPart =`${sqrtbase+9}² = ${(sqrtbase+5)*(sqrtbase+5)+(sqrtbase+5)*8} + 4² = ${(sqrtbase+9)*(sqrtbase+9)}`;
+        sumPart = `√(${a}) = ${sqrta}`;
+        return [firstPart,secondPart,thirdPart,fouthPart,fifthPart,sixthPart,seventhPart,eigthPart,sumPart];
+    }
+  }
 }
 
 // 显示下一个提示步骤
@@ -586,7 +700,7 @@ function showNextStep() {
 
 // 提交答案
 function submitAnswer() {
-  const correctAnswer = num1 * num2;
+  const correctAnswer = Math.sqrt(num1);
 
   if (!answered) {
     if (selectedOption === null) {
@@ -642,7 +756,7 @@ function submitAnswer() {
 
 // 显示答案
 function showAnswer() {
-  document.getElementById('steps').innerHTML += `<div>🎯 Final Answer: ${num1 * num2}</div>`;
+  document.getElementById('steps').innerHTML += `<div>🎯 Final Answer: ${Math.sqrt(num1)}</div>`;
   answered = true;
   killStreak = 0;
 }
@@ -784,7 +898,7 @@ function showGameOverScreen() {
   message.style.marginBottom = '30px';
   message.textContent = 'Time Over!';
   
-      // 显示结束
+  // 显示结束
   const endMsg = document.createElement('div');
   endMsg.style.color = '#ffcc00';
   endMsg.style.fontSize = '24px';
@@ -820,7 +934,7 @@ function showGameOverScreen() {
   nextButton.style.backgroundColor = '#4169e1';
   nextButton.textContent = 'Next Level';
   nextButton.onclick = function() {
-    window.location.href = 'Math Game 01.html';
+    window.location.href = 'Math Game 13.html';
   };
   
   // 添加到页面

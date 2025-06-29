@@ -389,8 +389,8 @@
   <svg viewBox="0 0 200 250">
     <defs>
       <linearGradient id="pikachuGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#4169e1"/>
-        <stop offset="100%" style="stop-color:#9370db"/>
+        <stop offset="0%" style="stop-color:#ff9966"/>
+        <stop offset="100%" style="stop-color:#ff5e62"/>
       </linearGradient>
     </defs>
     <!-- 尾巴 -->
@@ -431,7 +431,7 @@ let selectedOption = null;
 let correctAnswerIndex = null;
 
 // 计时器相关变量
-let gameTimeInSeconds = 90; // 5分钟 = 300秒
+let gameTimeInSeconds = 180; // 5分钟 = 300秒
 let remainingTimeInSeconds = gameTimeInSeconds;
 let timerInterval = null;
 let gameActive = false;
@@ -482,10 +482,20 @@ function RandomNumber(x1, x2) {
 }
 // 生成题目
 function generateQuestion() {
-  num1 = RandomNumber(1, 15);
-  num2 = Math.floor(Math.random() * 9) + 1;
-  document.getElementById('question').innerText = `${num1} × ${num2} = ?`;
-  steps = generateSteps(num1, num2);
+  // 记录开始时间
+  startTime = performance.now();
+
+  let OptionNum= Math.floor(Math.random() * 3) ; 
+  if (OptionNum==2) {
+    num1=Math.floor(RandomNumber(2,19)/2)*10+1;
+  }
+  else{
+    num1=RandomNumber(2,19)*5;
+  }
+  
+  document.getElementById('question').innerText = `What is ${num1}²?`;
+  num2 = num1;
+  steps = generateSteps(num1);
   currentStep = 0;
   document.getElementById('steps').innerHTML = '';
   document.getElementById('feedback').innerHTML = '';
@@ -513,9 +523,8 @@ function generateOptions() {
     // 生成接近正确答案的干扰项
     //console.log('当前正确答案:', correctAnswer);
     let wrongAnswer = correctAnswer + 10 * Math.floor(Math.random() * 4 - 2);
-    //console.log('当前正确答案:', correctAnswer,'wrongAnswer:', wrongAnswer);
     if (wrongAnswer == correctAnswer || wrongAnswer <= 0) {
-      wrongAnswer = correctAnswer + 10 * (Math.floor(Math.random() * 4) + 1); // 确保干扰项为正数
+      wrongAnswer = correctAnswer + Math.floor(Math.random() * 10); // 确保干扰项为正数
     }
     // 确保不重复且不等于正确答案
     if (wrongAnswer !== correctAnswer && !options.includes(wrongAnswer) && wrongAnswer > 0) {
@@ -567,9 +576,28 @@ function generateOptions() {
 }
 
 // 生成解题步骤
-function generateSteps(a, b) {
-  let sumPart = `${a} x ${b} = ${a * b}`;
-  return [sumPart];
+function generateSteps(a) {
+  let firstPart,secondPart,sumPart;
+  let base = Math.floor(a / 10);
+  let add = a % 10;
+
+  if (add==0) {
+  firstPart = `${base}² × 100 = ${base} × ${base} × 100 `;
+  secondPart = `${base} × ${base} × 100 = ${ a * a }`;
+  return [firstPart, secondPart];
+  }
+  if (add==5) {
+  let firstPart = `${base} × (${base} + 1) × 100 = ${base * (base + 1) * 100}`;
+  let secondPart = `${add}² = ${add * add}`;
+  let sumPart = `${base*(base + 1) * 100} + ${add * add} = ${ a * a }`;
+  return [firstPart, secondPart, sumPart];
+  }
+  if (add==1) {
+  let firstPart = `${base} × ${base} × 100 = ${base * base * 100}`;
+  let secondPart = `(${base} + ${base}) × 10  = ${base * 2 * 10}`;
+  let sumPart = `${base * base * 100} + ${base * 2 * 10} + 1= ${ a * a }`;
+  return [firstPart, secondPart, sumPart];
+  }
 }
 
 // 显示下一个提示步骤
@@ -784,7 +812,7 @@ function showGameOverScreen() {
   message.style.marginBottom = '30px';
   message.textContent = 'Time Over!';
   
-      // 显示结束
+  // 显示结束
   const endMsg = document.createElement('div');
   endMsg.style.color = '#ffcc00';
   endMsg.style.fontSize = '24px';
@@ -820,7 +848,7 @@ function showGameOverScreen() {
   nextButton.style.backgroundColor = '#4169e1';
   nextButton.textContent = 'Next Level';
   nextButton.onclick = function() {
-    window.location.href = 'Math Game 01.html';
+    window.location.href = 'Math Game 06.html';
   };
   
   // 添加到页面

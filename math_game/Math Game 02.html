@@ -579,6 +579,8 @@ function generateSteps(a, b) {
 
 // 显示下一个提示步骤
 function showNextStep() {
+  answered = true;
+  killStreak = 0;
   if (currentStep < steps.length) {
     document.getElementById('steps').innerHTML += `<div>➡️ ${steps[currentStep]}</div>`;
     currentStep++;

@@ -429,6 +429,7 @@ let bestTime = localStorage.getItem('bestTime') ? parseFloat(localStorage.getIte
 let lastTryTime = null;
 let selectedOption = null;
 let correctAnswerIndex = null;
+let skipCountingArray = []; // 新增：存储skip counting数据的数组
 
 // 计时器相关变量
 let gameTimeInSeconds = 90; // 5分钟 = 300秒
@@ -568,12 +569,23 @@ function generateOptions() {
 
 // 生成解题步骤
 function generateSteps(a, b) {
+  // 创建skip counting数组
+  skipCountingArray = [];
+  for (let i = 1; i <= a; i++) {
+    skipCountingArray.push(i * b);
+  }
+  
+  // 生成解题步骤
   let sumPart = `${a} x ${b} = ${a * b}`;
-  return [sumPart];
+  let skipCountingPart = `Skip counting: ${skipCountingArray.join(", ")}`;
+  
+  return [skipCountingPart, sumPart];
 }
 
 // 显示下一个提示步骤
 function showNextStep() {
+  answered = true;
+  killStreak = 0;
   if (currentStep < steps.length) {
     document.getElementById('steps').innerHTML += `<div>➡️ ${steps[currentStep]}</div>`;
     currentStep++;
