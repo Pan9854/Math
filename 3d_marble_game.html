@@ -285,34 +285,36 @@
                 // 接近球洞时变色效果（渐变过程）
                 const proximityDistance = marbleWidth * 0.75; // 接近距离阈值
                 if (distance < proximityDistance) {
-                    // 获取当前球洞颜色并根据距离渐变
-                    const currentHoleColor = hole.style.backgroundColor;
+                    // 当靠近球洞时，滚珠逐渐变为球洞颜色
                     const proximityRatio = 1 - (distance / proximityDistance);
-                    const blueComponent = Math.round(255 * (1 - proximityRatio));
-                    marble.style.background = `radial-gradient(circle at 30% 30%, #ffffff, rgb(34, ${blueComponent}, 242))`;
+                    marble.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${currentHoleColor})`;
+                } else {
+                    // 远离球洞时恢复原始颜色
+                    marble.style.background = 'radial-gradient(circle at 30% 30%, #ffffff, #2272f2)';
                 }
                 
                 // 只有当滚珠完全落入球洞中心才触发得分
                 if (distance < marbleWidth * 0.15) {
-                    // 获取当前球洞颜色
-                    const currentHoleColor = hole.style.backgroundColor;
-
                     // 分数增加
                     score++;
                     scoreElement.textContent = `分数: ${score}`;
 
                     // 滚珠变色为球洞颜色
-                    const currentColor = currentHoleColor;
-                    marble.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${currentColor})`;
+                    marble.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${currentHoleColor})`;
 
-                    // 创建新的球洞
-                    setNewHole();
+                    // 隐藏当前球洞
+                    hole.style.display = 'none';
 
                     // 添加短暂的得分动画效果
                     scoreElement.style.transform = 'scale(1.5)';
                     setTimeout(() => {
                         scoreElement.style.transform = 'scale(1)';
                     }, 300);
+
+                    // 创建新的不同颜色的球洞
+                    setTimeout(() => {
+                        setNewHole(true);
+                    }, 500);
 
                     return 1;
                 }
@@ -449,6 +451,16 @@
 
                 // 设置初始球洞
                 setNewHole();
+            }
+
+            // 设置10秒自动更换球洞的定时器
+            function startHoleResetTimer() {
+                if (holeResetTimer) {
+                    clearTimeout(holeResetTimer);
+                }
+                holeResetTimer = setTimeout(() => {
+                    setNewHole(true);
+                }, 10000);
             }
 
             // 检测是否支持设备方向API
