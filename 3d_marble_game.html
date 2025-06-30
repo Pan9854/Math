@@ -239,6 +239,8 @@
             let velocityX = 0, velocityY = 0;
             let lastTime = 0;
             let score = 0;
+            let currentHoleColor = '#333';
+            let holeResetTimer = null;
             const friction = 0.95;
             const sensitivity = 0.15;
 
@@ -451,6 +453,7 @@
 
                 // 设置初始球洞
                 setNewHole();
+                startHoleResetTimer();
             }
 
             // 设置10秒自动更换球洞的定时器
