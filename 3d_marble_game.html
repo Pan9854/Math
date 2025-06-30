@@ -31,19 +31,12 @@
 
         #game-board {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80vw;
-            height: 80vw;
-            max-width: 500px;
-            max-height: 500px;
+            width: 100%;
+            height: 100%;
             background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
             perspective: 1000px;
             transform-style: preserve-3d;
+            overflow: hidden;
         }
 
         #marble {
@@ -56,12 +49,25 @@
             transform-style: preserve-3d;
             will-change: transform;
             transition: transform 0.1s ease-out;
+            z-index: 10;
+        }
+
+        #hole {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
+            background-color: #333;
+            z-index: 5;
+            transform: translateZ(-5px);
         }
 
         .wall {
             position: absolute;
             background-color: rgba(255, 255, 255, 0.8);
             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 20;
         }
 
         .top-wall, .bottom-wall {
@@ -79,6 +85,17 @@
         .left-wall { left: 0; }
         .right-wall { right: 0; }
 
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 30;
+        }
+
         #instructions {
             position: absolute;
             top: 20px;
@@ -89,6 +106,7 @@
             font-size: 18px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             padding: 0 20px;
+            z-index: 30;
         }
 
         #permission-overlay {
@@ -161,6 +179,12 @@
             100% { transform: rotate(0deg); }
         }
 
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
         @media screen and (max-height: 500px) and (orientation: landscape) {
             .rotate-device {
                 display: flex;
@@ -172,13 +196,15 @@
     <div id="game-container">
         <div id="game-board">
             <div id="marble"></div>
+            <div id="hole"></div>
             <div class="wall top-wall"></div>
             <div class="wall bottom-wall"></div>
             <div class="wall left-wall"></div>
             <div class="wall right-wall"></div>
         </div>
+        <div id="score">分数: 0</div>
         <div id="instructions">
-            倾斜设备移动滚珠
+            倾斜设备将滚珠移入球洞
         </div>
     </div>
 
@@ -201,16 +227,87 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const marble = document.getElementById('marble');
+            const hole = document.getElementById('hole');
             const gameBoard = document.getElementById('game-board');
             const permissionOverlay = document.getElementById('permission-overlay');
             const permissionBtn = document.getElementById('permission-btn');
+            const scoreElement = document.getElementById('score');
 
             let boardWidth, boardHeight, marbleWidth, marbleHeight;
             let marbleX = 0, marbleY = 0;
+            let holeX = 0, holeY = 0;
             let velocityX = 0, velocityY = 0;
             let lastTime = 0;
+            let score = 0;
             const friction = 0.95;
             const sensitivity = 0.15;
+
+            // 生成随机颜色
+            function getRandomColor() {
+                const colors = [
+                    '#FF5252', '#FF4081', '#E040FB', '#7C4DFF', 
+                    '#536DFE', '#448AFF', '#40C4FF', '#18FFFF',
+                    '#64FFDA', '#69F0AE', '#B2FF59', '#EEFF41', 
+                    '#FFFF00', '#FFD740', '#FFAB40', '#FF6E40'
+                ];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            // 设置球洞颜色和位置
+            function setNewHole() {
+                const holeColor = getRandomColor();
+                const glowColor = holeColor.replace(')', ', 0.5)').replace('rgb', 'rgba');
+
+                hole.style.backgroundColor = holeColor;
+                hole.style.boxShadow = `inset 0 0 15px rgba(0, 0, 0, 0.7), 0 0 10px ${glowColor}`;
+                hole.style.animation = 'pulse 2s infinite ease-in-out';
+
+                // 确保球洞不会出现在边界太近的位置
+                const margin = 50;
+                holeX = margin + Math.random() * (boardWidth - marbleWidth - margin * 2);
+                holeY = margin + Math.random() * (boardHeight - marbleHeight - margin * 2);
+
+                hole.style.transform = `translate3d(${holeX}px, ${holeY}px, -5px)`;
+            }
+
+            // 检测滚珠是否落入球洞
+            function checkHoleCollision() {
+                const marbleCenterX = marbleX + marbleWidth / 2;
+                const marbleCenterY = marbleY + marbleHeight / 2;
+                const holeCenterX = holeX + marbleWidth / 2;
+                const holeCenterY = holeY + marbleHeight / 2;
+
+                const distance = Math.sqrt(
+                    Math.pow(marbleCenterX - holeCenterX, 2) + 
+                    Math.pow(marbleCenterY - holeCenterY, 2)
+                );
+
+                // 如果滚珠中心距离球洞中心小于球洞半径的一半，判定为落入球洞
+                if (distance < marbleWidth * 0.25) {
+                    // 获取当前球洞颜色
+                    const currentHoleColor = hole.style.backgroundColor;
+
+                    // 分数增加
+                    score++;
+                    scoreElement.textContent = `分数: ${score}`;
+
+                    // 滚珠变色为球洞颜色
+                    const currentColor = currentHoleColor;
+                    marble.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${currentColor})`;
+
+                    // 创建新的球洞
+                    setNewHole();
+
+                    // 添加短暂的得分动画效果
+                    scoreElement.style.transform = 'scale(1.5)';
+                    setTimeout(() => {
+                        scoreElement.style.transform = 'scale(1)';
+                    }, 300);
+
+                    return true;
+                }
+                return false;
+            }
 
             // 初始化尺寸
             function updateDimensions() {
@@ -226,6 +323,9 @@
                 marbleX = (boardWidth - marbleWidth) / 2;
                 marbleY = (boardHeight - marbleHeight) / 2;
                 updateMarblePosition();
+
+                // 设置初始球洞
+                setNewHole();
             }
 
             // 更新滚珠位置
@@ -242,7 +342,7 @@
                 marble.style.transform = `translate3d(${marbleX}px, ${marbleY}px, 0) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 
                 // 为游戏板添加3D倾斜效果
-                gameBoard.style.transform = `translate(-50%, -50%) rotateX(${rotateX * 0.5}deg) rotateY(${rotateY * 0.5}deg)`;
+                gameBoard.style.transform = `rotateX(${rotateX * 0.3}deg) rotateY(${rotateY * 0.3}deg)`;
             }
 
             // 处理设备方向变化
@@ -268,6 +368,9 @@
                 marbleY += velocityY;
 
                 updateMarblePosition();
+
+                // 检查是否落入球洞
+                checkHoleCollision();
             }
 
             // 动画循环
@@ -287,6 +390,9 @@
                 if (marbleY <= 0 || marbleY >= boardHeight - marbleHeight) {
                     velocityY = -velocityY * 0.7; // 碰撞后反弹，损失一些能量
                 }
+
+                // 检查是否落入球洞
+                checkHoleCollision();
 
                 requestAnimationFrame(gameLoop);
             }
@@ -327,6 +433,12 @@
                 document.addEventListener('touchmove', function(e) {
                     e.preventDefault(); // 防止页面滚动
                 }, { passive: false });
+
+                // 初始化滚珠颜色
+                marble.style.background = 'radial-gradient(circle at 30% 30%, #ffffff, #2272f2)';
+
+                // 设置初始球洞
+                setNewHole();
             }
 
             // 检测是否支持设备方向API
