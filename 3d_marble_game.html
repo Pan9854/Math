@@ -259,7 +259,8 @@
             function setNewHole() {
                 const holeColor = getRandomColor();
                 const glowColor = holeColor.replace(')', ', 0.5)').replace('rgb', 'rgba');
-
+                
+                currentHoleColor = holeColor;
                 hole.style.backgroundColor = holeColor;
                 hole.style.boxShadow = `inset 0 0 15px rgba(0, 0, 0, 0.7), 0 0 10px ${glowColor}`;
                 hole.style.animation = 'pulse 2s infinite ease-in-out';
@@ -270,10 +271,14 @@
                 holeY = margin + Math.random() * (boardHeight - marbleHeight - margin * 2);
 
                 hole.style.transform = `translate3d(${holeX}px, ${holeY}px, -5px)`;
+                hole.style.display = 'block';
             }
 
             // 检测滚珠是否落入球洞
             function checkHoleCollision() {
+                // 检查球洞是否可见
+                if (hole.style.display === 'none') return 0;
+                
                 const marbleCenterX = marbleX + marbleWidth / 2;
                 const marbleCenterY = marbleY + marbleHeight / 2;
                 const holeCenterX = holeX + marbleWidth / 2;
