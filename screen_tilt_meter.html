@@ -38,19 +38,22 @@
 
         .angle-display {
             position: absolute;
-            top: 50%;
+            top: 10%;
             left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 4rem;
+            transform: translate(-50%, 0);
+            font-size: 3rem;
             font-weight: bold;
             color: white;
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
             background-color: rgba(0, 0, 0, 0.6);
-            padding: 20px 30px;
+            padding: 15px 25px;
             border-radius: 20px;
             z-index: 100;
             animation: pulse 2s infinite ease-in-out;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         @keyframes pulse {
@@ -193,7 +196,7 @@
 
         .level-perfect {
             position: absolute;
-            top: 10%;
+            top: 25%;
             left: 50%;
             transform: translateX(-50%);
             font-size: 1.5rem;
@@ -201,6 +204,13 @@
             font-weight: bold;
             opacity: 0;
             transition: opacity 0.5s;
+        }
+        
+        .height-display {
+            font-size: 1.5rem;
+            margin-top: 10px;
+            color: #64B5F6;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         }
     </style>
 </head>
@@ -219,7 +229,10 @@
             </div>
         </div>
 
-        <div id="angleDisplay" class="angle-display">0.0°</div>
+        <div id="angleDisplay" class="angle-display">
+            <div>当前坡度: <span id="angleValue">0.0°</span></div>
+            <div id="heightDisplay" class="height-display">垂直高度: 0.00</div>
+        </div>
 
         <div class="horizontal-line"></div>
         <div id="levelPerfect" class="level-perfect">水平!</div>
@@ -229,6 +242,8 @@
     <script>
         // 获取元素
         const angleDisplay = document.getElementById('angleDisplay');
+        const angleValue = document.getElementById('angleValue');
+        const heightDisplay = document.getElementById('heightDisplay');
         const clockHand = document.getElementById('clockHand');
         const clockMarkers = document.getElementById('clockMarkers');
         const permissionButton = document.getElementById('permissionButton');
@@ -296,7 +311,11 @@
             const screenAngle = calculateScreenAngle(beta, gamma);
 
             // 更新角度显示
-            angleDisplay.textContent = `${screenAngle.toFixed(1)}°`;
+            angleValue.textContent = `${screenAngle.toFixed(1)}°`;
+            
+            // 计算垂直高度（假设斜边为1的情况下）
+            const verticalHeight = Math.sin(screenAngle * Math.PI / 180);
+            heightDisplay.textContent = `垂直高度: ${verticalHeight.toFixed(3)}`;
 
             // 更新时钟指针旋转和颜色
             updateClockHand(screenAngle);
@@ -310,10 +329,10 @@
             // 显示"水平!"提示，当角度小于2度
             if (screenAngle < 2) {
                 levelPerfect.style.opacity = '1';
-                angleDisplay.style.color = '#4CAF50';
+                angleValue.style.color = '#4CAF50';
             } else {
                 levelPerfect.style.opacity = '0';
-                angleDisplay.style.color = 'white';
+                angleValue.style.color = 'white';
             }
         }
 
@@ -357,10 +376,10 @@
 
             // 根据角度值调整显示的大小和样式
             if (screenAngle < 5) {
-                angleDisplay.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                angleDisplay.style.transform = 'translate(-50%, 0) scale(1.1)';
                 angleDisplay.style.boxShadow = '0 0 30px rgba(76, 175, 80, 0.5)';
             } else {
-                angleDisplay.style.transform = 'translate(-50%, -50%) scale(1)';
+                angleDisplay.style.transform = 'translate(-50%, 0) scale(1)';
                 angleDisplay.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.3)';
             }
         }
