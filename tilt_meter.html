@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>手机倾斜度测量器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #121212;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            position: absolute;
+            top: 20px;
+            width: 100%;
+        }
+
+        #permissionButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            cursor: pointer;
+        }
+
+        #permissionButton:active {
+            transform: translate(-50%, -48%);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        #phone-model {
+            width: 70vmin;
+            height: 140vmin;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.2s ease;
+        }
+
+        .angle-display {
+            position: absolute;
+            font-size: 1rem;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 5px 10px;
+            border-radius: 15px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        #top-angle {
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #right-angle {
+            top: 50%;
+            right: -60px;
+            transform: translateY(-50%);
+        }
+
+        #bottom-angle {
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #left-angle {
+            top: 50%;
+            left: -60px;
+            transform: translateY(-50%);
+        }
+
+        .phone-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(66, 133, 244, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #debug-info {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #eee;
+            font-family: monospace;
+            font-size: 0.7rem;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        .level-indicator {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #ff4081;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff4081;
+            transition: all 0.3s ease;
+        }
+
+        .helper-grid {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+        }
+
+        .grid-cell {
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+        }
+
+        .compass {
+            position: absolute;
+            bottom: 70px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(#333, #111);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .compass::before {
+            content: "";
+            position: absolute;
+            width: 2px;
+            height: 50%;
+            background-color: red;
+            transform-origin: bottom center;
+            transform: rotate(0deg);
+            z-index: 2;
+        }
+
+        .compass::after {
+            content: "N";
+            position: absolute;
+            top: 5px;
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 0.5; transform: scale(1); }
+        }
+
+        .no-support {
+            text-align: center;
+            padding: 20px;
+            color: #ff4081;
+            animation: pulse 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>手机倾斜度测量器</h1>
+
+        <button id="permissionButton">点击开始测量</button>
+
+        <div id="phone-model">
+            <div class="phone-face">
+                <div class="helper-grid">
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                </div>
+                <div class="level-indicator"></div>
+            </div>
+        </div>
+
+        <div class="angle-display" id="top-angle">0°</div>
+        <div class="angle-display" id="right-angle">0°</div>
+        <div class="angle-display" id="bottom-angle">0°</div>
+        <div class="angle-display" id="left-angle">0°</div>
+
+        <div class="compass"></div>
+
+        <div id="debug-info">
+            设备方向数据加载中...
+        </div>
+    </div>
+
+    <script>
+        const phoneModel = document.getElementById('phone-model');
+        const topAngle = document.getElementById('top-angle');
+        const rightAngle = document.getElementById('right-angle');
+        const bottomAngle = document.getElementById('bottom-angle');
+        const leftAngle = document.getElementById('left-angle');
+        const debugInfo = document.getElementById('debug-info');
+        const levelIndicator = document.querySelector('.level-indicator');
+        const compass = document.querySelector('.compass');
+        const permissionButton = document.getElementById('permissionButton');
+
+        let alpha = 0; // Z轴旋转角度 (指南针方向)
+        let beta = 0;  // X轴旋转角度 (前后倾斜)
+        let gamma = 0; // Y轴旋转角度 (左右倾斜)
+
+        // 检查设备方向API是否可用
+        if (window.DeviceOrientationEvent) {
+            permissionButton.addEventListener('click', requestPermission);
+        } else {
+            permissionButton.textContent = "您的设备不支持方向检测";
+            permissionButton.classList.add('no-support');
+            permissionButton.disabled = true;
+        }
+
+        // 请求传感器权限
+        function requestPermission() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ 需要请求权限
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                            permissionButton.style.display = 'none';
+                        } else {
+                            alert('需要传感器权限来测量倾斜度');
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // 其他设备不需要请求权限
+                window.addEventListener('deviceorientation', handleOrientation);
+                permissionButton.style.display = 'none';
+            }
+        }
+
+        function handleOrientation(event) {
+            // 获取设备方向数据
+            alpha = event.alpha || 0; // Z轴 - 指南针方向 (0-360)
+            beta = event.beta || 0;   // X轴 - 前后倾斜 (-180-180)
+            gamma = event.gamma || 0; // Y轴 - 左右倾斜 (-90-90)
+
+            // 计算手机四个边与水平面的夹角
+            const topEdgeAngle = calculateTopEdgeAngle(beta, gamma);
+            const rightEdgeAngle = calculateRightEdgeAngle(beta, gamma);
+            const bottomEdgeAngle = calculateBottomEdgeAngle(beta, gamma);
+            const leftEdgeAngle = calculateLeftEdgeAngle(beta, gamma);
+
+            // 更新显示
+            topAngle.textContent = `${topEdgeAngle.toFixed(1)}°`;
+            rightAngle.textContent = `${rightEdgeAngle.toFixed(1)}°`;
+            bottomAngle.textContent = `${bottomEdgeAngle.toFixed(1)}°`;
+            leftAngle.textContent = `${leftEdgeAngle.toFixed(1)}°`;
+
+            // 更新3D手机模型的旋转
+            updatePhoneModelRotation(beta, gamma);
+
+            // 更新水平指示器位置
+            updateLevelIndicator(beta, gamma);
+
+            // 更新指南针
+            updateCompass(alpha);
+
+            // 更新调试信息
+            debugInfo.innerHTML = `
+                Alpha (Z): ${alpha.toFixed(1)}° | 
+                Beta (X): ${beta.toFixed(1)}° | 
+                Gamma (Y): ${gamma.toFixed(1)}°
+            `;
+        }
+
+        // 计算手机顶部边缘与水平面的夹角
+        function calculateTopEdgeAngle(beta, gamma) {
+            // 将角度转换为弧度
+            const betaRad = beta * Math.PI / 180;
+            const gammaRad = gamma * Math.PI / 180;
+
+            // 计算法向量
+            const nx = -Math.sin(gammaRad);
+            const ny = Math.sin(betaRad) * Math.cos(gammaRad);
+            const nz = Math.cos(betaRad) * Math.cos(gammaRad);
+
+            // 计算顶部边缘方向向量 (手机坐标系中为y轴负方向)
+            const ex = 0;
+            const ey = -1;
+            const ez = 0;
+
+            // 计算与水平面的夹角
+            // 水平面法向量为 (0,0,1)
+            const dotProduct = nz;
+            const angle = Math.acos(dotProduct) * 180 / Math.PI;
+
+            // 计算顶部边缘与水平面的夹角
+            const topEdgeAngle = 90 - Math.abs(beta);
+            return Math.abs(topEdgeAngle);
+        }
+
+        // 计算手机右侧边缘与水平面的夹角
+        function calculateRightEdgeAngle(beta, gamma) {
+            // 简化计算：当手机平放时，右侧边缘与水平面的夹角为90度
+            // 当手机右侧抬起时，右侧边缘与水平面的夹角减小
+            return 90 - Math.abs(gamma);
+        }
+
+        // 计算手机底部边缘与水平面的夹角
+        function calculateBottomEdgeAngle(beta, gamma) {
+            // 底部边缘与顶部边缘夹角相同
+            return calculateTopEdgeAngle(beta, gamma);
+        }
+
+        // 计算手机左侧边缘与水平面的夹角
+        function calculateLeftEdgeAngle(beta, gamma) {
+            // 左侧边缘与右侧边缘夹角相同
+            return calculateRightEdgeAngle(beta, gamma);
+        }
+
+        // 更新3D手机模型的旋转
+        function updatePhoneModelRotation(beta, gamma) {
+            // 限制旋转角度范围，避免手机模型翻转
+            const limitedBeta = Math.max(-45, Math.min(45, beta));
+            const limitedGamma = Math.max(-45, Math.min(45, gamma));
+            
+            // 应用旋转变换
+            phoneModel.style.transform = `rotateX(${-limitedBeta}deg) rotateY(${limitedGamma}deg)`;
+        }
+        
+        // 更新水平指示器位置
+        function updateLevelIndicator(beta, gamma) {
+            // 计算水平指示器位置
+            // 基于倾斜角度移动指示器，显示虚拟气泡水平仪效果
+            const maxMove = 40; // 最大移动距离（像素）
+            const moveX = (gamma / 45) * maxMove;
+            const moveY = (beta / 45) * maxMove;
+            
+            // 更新气泡位置
+            levelIndicator.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            
+            // 根据平衡度改变颜色
+            const tiltMagnitude = Math.sqrt(beta * beta + gamma * gamma);
+            const normalizedTilt = Math.min(tiltMagnitude / 30, 1); // 30度作为最大倾斜
+            
+            // 从绿色到红色的渐变
+            const red = Math.floor(255 * normalizedTilt);
+            const green = Math.floor(255 * (1 - normalizedTilt));
+            levelIndicator.style.backgroundColor = `rgb(${red}, ${green}, 100)`;
+            levelIndicator.style.boxShadow = `0 0 10px rgb(${red}, ${green}, 100)`;
+        }
+        
+        // 更新指南针方向
+        function updateCompass(alpha) {
+            // 旋转指南针指针指向北方
+            try {
+                const needle = document.querySelector('.compass::before');
+                if (needle) {
+                    needle.style.transform = `rotate(${alpha}deg)`;
+                }
+            } catch (e) {
+                // 使用样式属性变量作为备选方案
+                compass.style.setProperty('--rotation', `${alpha}deg`);
+            }
+        }
+
+        // 防止页面滚动
+        document.body.addEventListener('touchmove', function(event) {
+            event.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
