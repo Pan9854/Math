@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>手机倾斜度测量器</title>
     <style>
+        :root {
+            --compass-rotation: 0deg;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -125,6 +129,22 @@
             font-size: 1.2rem;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
         }
+        
+        .center-angle-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 15px 25px;
+            border-radius: 20px;
+            z-index: 60;
+            pointer-events: none;
+        }
 
         #debug-info {
             position: absolute;
@@ -184,7 +204,8 @@
             height: 50%;
             background-color: red;
             transform-origin: bottom center;
-            transform: rotate(0deg);
+            transform: rotate(var(--compass-rotation));
+            -webkit-transform: rotate(var(--compass-rotation));
             z-index: 2;
         }
 
@@ -230,6 +251,7 @@
                     <div class="grid-cell"></div>
                 </div>
                 <div class="level-indicator"></div>
+                <div class="center-angle-display" id="center-angle">0°</div>
             </div>
         </div>
 
@@ -251,6 +273,7 @@
         const rightAngle = document.getElementById('right-angle');
         const bottomAngle = document.getElementById('bottom-angle');
         const leftAngle = document.getElementById('left-angle');
+        const centerAngle = document.getElementById('center-angle');
         const debugInfo = document.getElementById('debug-info');
         const levelIndicator = document.querySelector('.level-indicator');
         const compass = document.querySelector('.compass');
@@ -302,11 +325,15 @@
             const bottomEdgeAngle = calculateBottomEdgeAngle(beta, gamma);
             const leftEdgeAngle = calculateLeftEdgeAngle(beta, gamma);
 
+            // 计算屏幕与水平面的夹角
+            const screenAngle = calculateScreenAngle(beta, gamma);
+            
             // 更新显示
             topAngle.textContent = `${topEdgeAngle.toFixed(1)}°`;
             rightAngle.textContent = `${rightEdgeAngle.toFixed(1)}°`;
             bottomAngle.textContent = `${bottomEdgeAngle.toFixed(1)}°`;
             leftAngle.textContent = `${leftEdgeAngle.toFixed(1)}°`;
+            centerAngle.textContent = `${screenAngle.toFixed(1)}°`;
 
             // 更新3D手机模型的旋转
             updatePhoneModelRotation(beta, gamma);
@@ -369,6 +396,24 @@
             // 左侧边缘与右侧边缘夹角相同
             return calculateRightEdgeAngle(beta, gamma);
         }
+        
+        // 计算手机屏幕与水平面的夹角
+        function calculateScreenAngle(beta, gamma) {
+            // 计算屏幕法向量与竖直方向的夹角
+            const betaRad = beta * Math.PI / 180;
+            const gammaRad = gamma * Math.PI / 180;
+            
+            // 屏幕法向量
+            const nx = -Math.sin(gammaRad);
+            const ny = Math.sin(betaRad) * Math.cos(gammaRad);
+            const nz = Math.cos(betaRad) * Math.cos(gammaRad);
+            
+            // 水平面法向量 (0, 0, 1)
+            const dotProduct = nz;
+            const angle = Math.acos(dotProduct) * 180 / Math.PI;
+            
+            return angle;
+        }
 
         // 更新3D手机模型的旋转
         function updatePhoneModelRotation(beta, gamma) {
@@ -404,15 +449,17 @@
         
         // 更新指南针方向
         function updateCompass(alpha) {
-            // 旋转指南针指针指向北方
+            // 旋转指南针指针始终指向北方
+            // 由于设备旋转了alpha度，指针需要反向旋转同样的角度来保持指向北方
             try {
-                const needle = document.querySelector('.compass::before');
-                if (needle) {
-                    needle.style.transform = `rotate(${alpha}deg)`;
-                }
+                // 直接使用伪元素样式不可靠，使用CSS变量更为稳定
+                compass.style.setProperty('--needle-rotation', `${-alpha}deg`);
+                compass.style.setProperty('--webkit-needle-rotation', `${-alpha}deg`);
+                
+                // 给伪元素添加旋转样式
+                document.documentElement.style.setProperty('--compass-rotation', `${-alpha}deg`);
             } catch (e) {
-                // 使用样式属性变量作为备选方案
-                compass.style.setProperty('--rotation', `${alpha}deg`);
+                console.error('更新指南针失败', e);
             }
         }
 
