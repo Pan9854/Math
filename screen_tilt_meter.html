@@ -59,27 +59,90 @@
             100% { opacity: 0.9; }
         }
 
-        .triangle-container {
+        .clock-container {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%;
-            max-width: 300px;
-            height: 200px;
+            width: 280px;
+            height: 280px;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        .triangle {
-            width: 0;
-            height: 0;
-            border-left: 150px solid transparent;
-            border-right: 150px solid transparent;
-            border-bottom: 200px solid rgba(0, 255, 0, 0.7);
+        .clock {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .clock-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .clock-hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            width: 4px;
+            height: 40%;
+            background: linear-gradient(to top, rgba(0, 255, 0, 0.9), rgba(0, 255, 0, 0.5));
             transform-origin: 50% 100%;
-            transition: transform 0.2s, border-bottom-color 0.3s;
+            transition: transform 0.2s, background 0.3s;
+            border-radius: 50% 50% 0 0;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+        }
+
+        .clock-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            background-color: #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+        }
+
+        .clock-markers {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .clock-marker {
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            left: 50%;
+            top: 10px;
+            transform-origin: 50% calc(125px - 10px);
+        }
+
+        .clock-marker.major {
+            width: 3px;
+            height: 15px;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .level-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 3px;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            transform: translateX(-50%);
         }
 
         .permission-button {
@@ -145,8 +208,15 @@
     <div class="container">
         <button id="permissionButton" class="permission-button">点击开始测量倾斜度</button>
 
-        <div class="triangle-container">
-            <div id="triangle" class="triangle"></div>
+        <div class="clock-container">
+            <div class="clock">
+                <div class="clock-face">
+                    <div class="clock-markers" id="clockMarkers"></div>
+                    <div class="level-indicator"></div>
+                    <div id="clockHand" class="clock-hand"></div>
+                    <div class="clock-center"></div>
+                </div>
+            </div>
         </div>
 
         <div id="angleDisplay" class="angle-display">0.0°</div>
@@ -159,10 +229,25 @@
     <script>
         // 获取元素
         const angleDisplay = document.getElementById('angleDisplay');
-        const triangle = document.getElementById('triangle');
+        const clockHand = document.getElementById('clockHand');
+        const clockMarkers = document.getElementById('clockMarkers');
         const permissionButton = document.getElementById('permissionButton');
         const debugInfo = document.getElementById('debugInfo');
         const levelPerfect = document.getElementById('levelPerfect');
+
+        // 创建时钟刻度
+        function createClockMarkers() {
+            for (let i = 0; i < 360; i += 6) {
+                const marker = document.createElement('div');
+                marker.className = 'clock-marker';
+                if (i % 30 === 0) {
+                    marker.className += ' major';
+                }
+                marker.style.transform = `rotate(${i}deg) translateX(-50%)`;
+                clockMarkers.appendChild(marker);
+            }
+        }
+        createClockMarkers();
 
         // 初始角度值
         let beta = 0;  // X轴旋转角度 (前后倾斜)
@@ -213,8 +298,8 @@
             // 更新角度显示
             angleDisplay.textContent = `${screenAngle.toFixed(1)}°`;
 
-            // 更新三角形旋转和颜色
-            updateTriangle(screenAngle);
+            // 更新时钟指针旋转和颜色
+            updateClockHand(screenAngle);
 
             // 更新调试信息
             debugInfo.innerHTML = `
@@ -252,14 +337,14 @@
             return angle;
         }
 
-        // 更新三角形旋转和颜色
-        function updateTriangle(screenAngle) {
-            // 旋转三角形，使其底边与水平面平行
-            // 实际上，我们让三角形以90度减去屏幕角度的角度旋转
-            const rotationAngle = -screenAngle;
-            triangle.style.transform = `rotate(${rotationAngle}deg)`;
+        // 更新时钟指针旋转和颜色
+        function updateClockHand(screenAngle) {
+            // 旋转时钟指针来表示倾斜角度
+            // 当屏幕水平时指针指向12点钟方向(0度)，完全垂直时转动90度
+            const rotationAngle = screenAngle;
+            clockHand.style.transform = `rotate(${rotationAngle}deg)`;
 
-            // 根据倾斜角度改变三角形颜色
+            // 根据倾斜角度改变指针颜色
             const normalizedAngle = Math.min(screenAngle / 90, 1); // 归一化到[0,1]区间
 
             // 颜色从绿色(水平)到红色(垂直)渐变
@@ -267,7 +352,8 @@
             const green = Math.floor(255 * (1 - normalizedAngle));
             const blue = 0;
 
-            triangle.style.borderBottomColor = `rgba(${red}, ${green}, ${blue}, 0.7)`;
+            clockHand.style.background = `linear-gradient(to top, rgba(${red}, ${green}, ${blue}, 0.9), rgba(${red}, ${green}, ${blue}, 0.5))`;
+            clockHand.style.boxShadow = `0 0 10px rgba(${red}, ${green}, ${blue}, 0.7)`;
 
             // 根据角度值调整显示的大小和样式
             if (screenAngle < 5) {
