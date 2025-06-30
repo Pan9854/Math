@@ -314,8 +314,12 @@
                 holeX = margin + Math.random() * (boardWidth - marbleWidth - margin * 2);
                 holeY = margin + Math.random() * (boardHeight - marbleHeight - margin * 2);
 
+                // 直接应用新位置并确保显示
                 hole.style.transform = `translate3d(${holeX}px, ${holeY}px, -5px)`;
                 hole.style.display = 'block';
+                
+                // 输出调试信息以追踪球洞位置变化
+                console.log(`球洞新位置: X=${holeX.toFixed(0)}, Y=${holeY.toFixed(0)}`);
             }
 
             // 检测滚珠是否落入球洞
@@ -635,12 +639,20 @@
                     
                     // 等待动画完成后再设置新的位置
                     setTimeout(() => {
+                        // 先移除transition以确保新位置立即生效
+                        hole.style.transition = "none";
                         setNewHole();
+                        
                         // 恢复原始视觉效果
-                        setTimeout(() => {
-                            hole.style.opacity = "1";
-                            hole.style.transform = `translate3d(${holeX}px, ${holeY}px, -5px) scale(1)`;
-                        }, 100);
+                        requestAnimationFrame(() => {
+                            setTimeout(() => {
+                                // 重新启用transition，并应用完整的样式
+                                hole.style.transition = "transform 0.5s ease-out, opacity 0.5s ease-out";
+                                hole.style.opacity = "1";
+                                // 确保使用更新后的holeX和holeY
+                                hole.style.transform = `translate3d(${holeX}px, ${holeY}px, -5px) scale(1)`;
+                            }, 50);
+                        });
                     }, 500);
                     
                     // 重新启动定时器

@@ -230,7 +230,7 @@
         </div>
 
         <div id="angleDisplay" class="angle-display">
-            <div>当前坡度: <span id="angleValue">0.0°</span></div>
+            <div>坡度: <span id="angleValue">0.0°</span></div>
             <div id="heightDisplay" class="height-display">垂直高度: 0.00</div>
         </div>
 
@@ -315,7 +315,7 @@
             
             // 计算垂直高度（假设斜边为1的情况下）
             const verticalHeight = Math.sin(screenAngle * Math.PI / 180);
-            heightDisplay.textContent = `垂直高度: ${verticalHeight.toFixed(3)}`;
+            heightDisplay.textContent = `斜高比: ${verticalHeight.toFixed(3)}`;
 
             // 更新时钟指针旋转和颜色
             updateClockHand(screenAngle);
