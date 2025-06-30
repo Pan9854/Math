@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D 滚珠游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #74ebd5, #9face6);
+        }
+
+        #game-board {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            height: 80vw;
+            max-width: 500px;
+            max-height: 500px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            perspective: 1000px;
+            transform-style: preserve-3d;
+        }
+
+        #marble {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #2272f2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d;
+            will-change: transform;
+            transition: transform 0.1s ease-out;
+        }
+
+        .wall {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .top-wall, .bottom-wall {
+            width: 100%;
+            height: 10px;
+        }
+
+        .left-wall, .right-wall {
+            height: 100%;
+            width: 10px;
+        }
+
+        .top-wall { top: 0; }
+        .bottom-wall { bottom: 0; }
+        .left-wall { left: 0; }
+        .right-wall { right: 0; }
+
+        #instructions {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            padding: 0 20px;
+        }
+
+        #permission-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        #permission-btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #permission-text {
+            color: white;
+            text-align: center;
+            font-size: 18px;
+            margin: 20px;
+            max-width: 80%;
+        }
+
+        .rotate-device {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .rotate-device img {
+            width: 100px;
+            height: auto;
+            margin-bottom: 20px;
+            animation: rotate 2s infinite ease-in-out;
+        }
+
+        .rotate-device p {
+            color: white;
+            font-size: 20px;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-90deg); }
+            75% { transform: rotate(-90deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        @media screen and (max-height: 500px) and (orientation: landscape) {
+            .rotate-device {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-board">
+            <div id="marble"></div>
+            <div class="wall top-wall"></div>
+            <div class="wall bottom-wall"></div>
+            <div class="wall left-wall"></div>
+            <div class="wall right-wall"></div>
+        </div>
+        <div id="instructions">
+            倾斜设备移动滚珠
+        </div>
+    </div>
+
+    <div id="permission-overlay">
+        <div id="permission-text">
+            此游戏需要访问您设备的方向传感器。
+            <br>请点击下方按钮开始游戏。
+        </div>
+        <button id="permission-btn">开始游戏</button>
+    </div>
+
+    <div class="rotate-device">
+        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 1.01L7 1C5.9 1 5 1.9 5 3V21C5 22.1 5.9 23 7 23H17C18.1 23 19 22.1 19 21V3C19 1.9 18.1 1.01 17 1.01ZM17 19H7V5H17V19Z" fill="white"/>
+            <path d="M9 8L15 12L9 16V8Z" fill="white"/>
+        </svg>
+        <p>请竖直持握设备</p>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const marble = document.getElementById('marble');
+            const gameBoard = document.getElementById('game-board');
+            const permissionOverlay = document.getElementById('permission-overlay');
+            const permissionBtn = document.getElementById('permission-btn');
+
+            let boardWidth, boardHeight, marbleWidth, marbleHeight;
+            let marbleX = 0, marbleY = 0;
+            let velocityX = 0, velocityY = 0;
+            let lastTime = 0;
+            const friction = 0.95;
+            const sensitivity = 0.15;
+
+            // 初始化尺寸
+            function updateDimensions() {
+                const boardRect = gameBoard.getBoundingClientRect();
+                boardWidth = boardRect.width;
+                boardHeight = boardRect.height;
+
+                const marbleRect = marble.getBoundingClientRect();
+                marbleWidth = marbleRect.width;
+                marbleHeight = marbleRect.height;
+
+                // 初始化滚珠位置为中心
+                marbleX = (boardWidth - marbleWidth) / 2;
+                marbleY = (boardHeight - marbleHeight) / 2;
+                updateMarblePosition();
+            }
+
+            // 更新滚珠位置
+            function updateMarblePosition() {
+                // 确保滚珠在边界内
+                marbleX = Math.max(0, Math.min(boardWidth - marbleWidth, marbleX));
+                marbleY = Math.max(0, Math.min(boardHeight - marbleHeight, marbleY));
+
+                // 应用3D效果
+                const rotateX = ((marbleY / (boardHeight - marbleHeight)) * 2 - 1) * -10;
+                const rotateY = ((marbleX / (boardWidth - marbleWidth)) * 2 - 1) * 10;
+
+                // 更新滚珠位置和3D效果
+                marble.style.transform = `translate3d(${marbleX}px, ${marbleY}px, 0) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+                // 为游戏板添加3D倾斜效果
+                gameBoard.style.transform = `translate(-50%, -50%) rotateX(${rotateX * 0.5}deg) rotateY(${rotateY * 0.5}deg)`;
+            }
+
+            // 处理设备方向变化
+            function handleDeviceOrientation(event) {
+                // 获取设备方向数据
+                let beta = event.beta;  // X轴 -180 到 180
+                let gamma = event.gamma; // Y轴 -90 到 90
+
+                // 限制最大倾斜角度
+                beta = Math.max(-45, Math.min(45, beta));
+                gamma = Math.max(-45, Math.min(45, gamma));
+
+                // 根据设备方向更新速度
+                velocityX += gamma * sensitivity;
+                velocityY += beta * sensitivity;
+
+                // 应用摩擦力
+                velocityX *= friction;
+                velocityY *= friction;
+
+                // 更新位置
+                marbleX += velocityX;
+                marbleY += velocityY;
+
+                updateMarblePosition();
+            }
+
+            // 动画循环
+            function gameLoop(currentTime) {
+                if (!lastTime) {
+                    lastTime = currentTime;
+                }
+
+                const deltaTime = currentTime - lastTime;
+                lastTime = currentTime;
+
+                // 模拟物理碰撞
+                if (marbleX <= 0 || marbleX >= boardWidth - marbleWidth) {
+                    velocityX = -velocityX * 0.7; // 碰撞后反弹，损失一些能量
+                }
+
+                if (marbleY <= 0 || marbleY >= boardHeight - marbleHeight) {
+                    velocityY = -velocityY * 0.7; // 碰撞后反弹，损失一些能量
+                }
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            // 请求设备方向访问权限
+            permissionBtn.addEventListener('click', function() {
+                if (typeof DeviceOrientationEvent !== 'undefined' && 
+                    typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    // iOS 13+ 需要请求权限
+                    DeviceOrientationEvent.requestPermission()
+                        .then(permissionState => {
+                            if (permissionState === 'granted') {
+                                permissionOverlay.style.display = 'none';
+                                window.addEventListener('deviceorientation', handleDeviceOrientation);
+                                initializeGame();
+                            } else {
+                                alert('需要传感器权限才能玩游戏！');
+                            }
+                        })
+                        .catch(console.error);
+                } else {
+                    // 其他设备直接添加监听器
+                    permissionOverlay.style.display = 'none';
+                    window.addEventListener('deviceorientation', handleDeviceOrientation);
+                    initializeGame();
+                }
+            });
+
+            // 初始化游戏
+            function initializeGame() {
+                updateDimensions();
+                requestAnimationFrame(gameLoop);
+
+                // 监听窗口大小变化
+                window.addEventListener('resize', updateDimensions);
+
+                // 添加触摸事件处理
+                document.addEventListener('touchmove', function(e) {
+                    e.preventDefault(); // 防止页面滚动
+                }, { passive: false });
+            }
+
+            // 检测是否支持设备方向API
+            if (window.DeviceOrientationEvent) {
+                console.log('设备方向API可用');
+            } else {
+                permissionOverlay.innerHTML = '<div id="permission-text">您的设备不支持方向传感器，无法运行此游戏。</div>';
+                console.error('设备方向API不可用');
+            }
+        });
+    </script>
+</body>
+</html>
