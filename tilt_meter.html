@@ -457,15 +457,35 @@
             
             return angle;
         }
-
-        // 更新3D手机模型的旋转
-        function updatePhoneModelRotation(beta, gamma) {
-            // 限制旋转角度范围，避免手机模型翻转
-            const limitedBeta = Math.max(-45, Math.min(45, beta));
-            const limitedGamma = Math.max(-45, Math.min(45, gamma));
-            
-            // 应用旋转变换
-            phoneModel.style.transform = `rotateX(${-limitedBeta}deg) rotateY(${limitedGamma}deg)`;
+</edit>
+<origin>
+        // 更新指南针方向
+        function updateCompass(alpha) {
+            // 旋转指南针指针始终指向北方
+            // 由于设备旋转了alpha度，指针需要反向旋转同样的角度来保持指向北方
+            try {
+                // 直接使用伪元素样式不可靠，使用CSS变量更为稳定
+                compass.style.setProperty('--needle-rotation', `${-alpha}deg`);
+                compass.style.setProperty('--webkit-needle-rotation', `${-alpha}deg`);
+                
+                // 给伪元素添加旋转样式
+                document.documentElement.style.setProperty('--compass-rotation', `${-alpha}deg`);
+            } catch (e) {
+                console.error('更新指南针失败', e);
+            }
+        }
+</origin>
+<edit>
+        // 更新指南针方向
+        function updateCompass(alpha) {
+            // 旋转指南针指针始终指向北方
+            // 由于设备旋转了alpha度，指针需要反向旋转同样的角度来保持指向北方
+            try {
+                // 给伪元素添加旋转样式
+                document.documentElement.style.setProperty('--compass-rotation', `${-alpha}deg`);
+            } catch (e) {
+                console.error('更新指南针失败', e);
+            }
         }
         
         // 更新水平指示器位置
