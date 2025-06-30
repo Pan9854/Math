@@ -282,8 +282,18 @@
                     Math.pow(marbleCenterY - holeCenterY, 2)
                 );
 
-                // 如果滚珠中心距离球洞中心小于球洞半径的一半，判定为落入球洞
-                if (distance < marbleWidth * 0.25) {
+                // 接近球洞时变色效果（渐变过程）
+                const proximityDistance = marbleWidth * 0.75; // 接近距离阈值
+                if (distance < proximityDistance) {
+                    // 获取当前球洞颜色并根据距离渐变
+                    const currentHoleColor = hole.style.backgroundColor;
+                    const proximityRatio = 1 - (distance / proximityDistance);
+                    const blueComponent = Math.round(255 * (1 - proximityRatio));
+                    marble.style.background = `radial-gradient(circle at 30% 30%, #ffffff, rgb(34, ${blueComponent}, 242))`;
+                }
+                
+                // 只有当滚珠完全落入球洞中心才触发得分
+                if (distance < marbleWidth * 0.15) {
                     // 获取当前球洞颜色
                     const currentHoleColor = hole.style.backgroundColor;
 
@@ -304,9 +314,9 @@
                         scoreElement.style.transform = 'scale(1)';
                     }, 300);
 
-                    return true;
+                    return 1;
                 }
-                return false;
+                return 0;
             }
 
             // 初始化尺寸
