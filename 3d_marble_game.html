@@ -628,7 +628,23 @@
                     clearTimeout(holeResetTimer);
                 }
                 holeResetTimer = setTimeout(() => {
-                    setNewHole();
+                    // 添加球洞移动前的视觉效果（缩小和淡出）
+                    hole.style.transition = "transform 0.5s ease-out, opacity 0.5s ease-out";
+                    hole.style.transform = `translate3d(${holeX}px, ${holeY}px, -5px) scale(0.2)`;
+                    hole.style.opacity = "0.2";
+                    
+                    // 等待动画完成后再设置新的位置
+                    setTimeout(() => {
+                        setNewHole();
+                        // 恢复原始视觉效果
+                        setTimeout(() => {
+                            hole.style.opacity = "1";
+                            hole.style.transform = `translate3d(${holeX}px, ${holeY}px, -5px) scale(1)`;
+                        }, 100);
+                    }, 500);
+                    
+                    // 重新启动定时器
+                    startHoleResetTimer();
                 }, 10000);
             }
 
