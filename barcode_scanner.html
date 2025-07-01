@@ -746,8 +746,19 @@
                         throw new Error('未检测到相机设备');
                     }
 
-                    // 默认使用第一个相机
-                    selectedDeviceId = availableDevices[0].deviceId;
+                    // 尝试找到后置摄像头
+                    let backCamera = availableDevices.find(device => 
+                        device.label.toLowerCase().includes('back') || 
+                        device.label.toLowerCase().includes('后') || 
+                        device.label.toLowerCase().includes('rear') || 
+                        device.label.toLowerCase().includes('环境') ||
+                        device.label.toLowerCase().includes('external'));
+                    
+                    // 如果找到后置摄像头就使用它，否则使用第一个摄像头
+                    selectedDeviceId = backCamera ? backCamera.deviceId : availableDevices[0].deviceId;
+                    
+                    // 保存选择的摄像头索引，以便后续使用
+                    currentDeviceIndex = backCamera ? availableDevices.indexOf(backCamera) : 0;
                     console.log('可用摄像头:', availableDevices);
 
                     // 显示相机视频元素和控制
@@ -861,14 +872,25 @@
                     }
                     
                     // 创建匹配记录列表标题
-                    const matchesTitle = document.createElement('h4');
-                    matchesTitle.textContent = '匹配的历史记录:';
-                    matchesTitle.style.marginTop = '10px';
-                    latestScanResult.appendChild(matchesTitle);
+                    //const matchesTitle = document.createElement('h4');
+                    //matchesTitle.textContent = '匹配的历史记录:';
+                    //matchesTitle.style.marginTop = '10px';
+                    //latestScanResult.appendChild(matchesTitle);
                     
                     // 创建匹配记录列表
                     const matchesList = document.createElement('div');
                     matchesList.style.marginTop = '5px';
+                    
+                    // 如果存在相同条码但不同商店的记录，显示提示消息
+                    const stores = new Set(matchingItems.map(item => item.store));
+                    if (stores.size > 1) {
+                        const storeNotice = document.createElement('div');
+                        storeNotice.textContent = '已存在的记录';
+                        storeNotice.style.color = 'var(--accent-color)';
+                        storeNotice.style.fontSize = '0.8rem';
+                        storeNotice.style.marginBottom = '5px';
+                        matchesList.appendChild(storeNotice);
+                    }
                     
                     matchingItems.forEach((item, index) => {
                         const matchItem = document.createElement('div');
@@ -915,13 +937,15 @@
                     navigator.vibrate(100);
                 }
 
-                // 无论是否存在相同条码，都添加到历史记录中
-                addToHistory({
-                    code: code,
-                    type: type,
-                    timestamp: timestamp,
-                    productName: ''
-                });
+                // 只有在不存在相同条码的情况下，才添加到历史记录中
+                if (matchingItems.length === 0) {
+                    addToHistory({
+                        code: code,
+                        type: type,
+                        timestamp: timestamp,
+                        productName: ''
+                    });
+                }
                 
                 // 扫码成功后停止扫码器
                 stopScanner();
@@ -947,8 +971,25 @@
 
                 // 获取价格信息
                 const price = productPriceInput.value.trim() ? parseFloat(productPriceInput.value.trim()) : null;
+                
+                // 检查是否存在相同条码
+                const sameCodeItems = scanHistory.filter(item => item.code === code);
+                
+                if (sameCodeItems.length > 0) {
+                    // 检查是否存在相同商店
+                    const sameStoreItems = sameCodeItems.filter(item => item.store === (store || '未指定'));
+                    
+                    if (sameStoreItems.length > 0) {
+                        // 存在相同条码且相同商店，显示确认对话框
+                       showMessage('已存在相同条码和商店的记录', false);
+                       return;
+                    } else {
+                        // 存在相同条码但不同商店，显示提示消息
+                        showMessage('已存在相同条码但不同商店的记录', false);
+                    }
+                }
 
-                // 添加新记录（不再检查是否存在相同条码）
+                // 添加新记录
                 addToHistory({
                     code: code,
                     type: '未知',
@@ -1436,14 +1477,25 @@
                     }
                     
                     // 创建匹配记录列表标题
-                    const matchesTitle = document.createElement('h4');
-                    matchesTitle.textContent = '匹配的历史记录:';
-                    matchesTitle.style.marginTop = '10px';
-                    latestScanResult.appendChild(matchesTitle);
+                    //const matchesTitle = document.createElement('h10');
+                    //matchesTitle.textContent = '匹配的历史记录:';
+                    //matchesTitle.style.marginTop = '5px';
+                    //latestScanResult.appendChild(matchesTitle);
                     
                     // 创建匹配记录列表
                     const matchesList = document.createElement('div');
                     matchesList.style.marginTop = '5px';
+                    
+                    // 如果存在相同条码但不同商店的记录，显示提示消息
+                    const stores = new Set(matchingItems.map(item => item.store));
+                    if (stores.size > 1) {
+                        const storeNotice = document.createElement('div');
+                        storeNotice.textContent = '找到的记录';
+                        storeNotice.style.color = 'var(--accent-color)';
+                        storeNotice.style.fontSize = '0.8rem';
+                        storeNotice.style.marginBottom = '5px';
+                        matchesList.appendChild(storeNotice);
+                    }
                     
                     matchingItems.forEach((item, index) => {
                         const matchItem = document.createElement('div');
@@ -1490,13 +1542,15 @@
                     navigator.vibrate(100);
                 }
 
-                // 无论是否存在相同条码，都添加到历史记录中
-                addToHistory({
-                    code: code,
-                    type: type,
-                    timestamp: timestamp,
-                    productName: ''
-                });
+                // 只有在不存在相同条码的情况下，才添加到历史记录中
+                if (matchingItems.length === 0) {
+                    addToHistory({
+                        code: code,
+                        type: type,
+                        timestamp: timestamp,
+                        productName: ''
+                    });
+                }
 
                 showMessage('从图像中检测到条码');
             }
