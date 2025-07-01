@@ -549,10 +549,7 @@
                     <button id="start-scan" class="btn btn-primary scan-btn">开始扫码</button>
                     <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none;">
                 </div>
-                <div class="camera-controls" style="display:none;">
-                    <button id="toggle-flash" class="control-button">⚡</button>
-                    <button id="switch-camera" class="control-button">⟲</button>
-                </div>
+                <!-- 移除摄像头控制按钮 -->
             </div>
 
 
@@ -589,6 +586,10 @@
                                 }
                             </style>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-store">商店</label>
+                        <input type="text" id="product-store" placeholder="输入购买商店">
                     </div>
                     <div class="form-group">
                         <button id="upload-photo" class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">上传照片</button>
@@ -658,6 +659,7 @@
             const productNameInput = document.getElementById('product-name');
             const productCodeInput = document.getElementById('product-code');
             const productPriceInput = document.getElementById('product-price');
+            const productStoreInput = document.getElementById('product-store');
             const saveProductBtn = document.getElementById('save-product');
             const quickSaveBtn = document.getElementById('quick-save');
             const clearFormBtn = document.getElementById('clear-form');
@@ -848,32 +850,61 @@
                 const type = result.getBarcodeFormat().toString();
                 const timestamp = new Date();
                 
-                // 在历史记录中查找对应的条形码
-                const existingIndex = scanHistory.findIndex(item => item.code === code);
-                let productInfo = {
-                    name: '',
-                    price: null
-                };
+                // 在历史记录中查找所有匹配的条形码
+                const matchingItems = scanHistory.filter(item => item.code === code);
                 
-                // 如果找到匹配记录，获取产品信息
-                if (existingIndex !== -1) {
-                    const item = scanHistory[existingIndex];
-                    productInfo.name = item.productName || '';
-                    productInfo.price = item.price || null;
-                }
-
                 // 更新UI显示结果
                 resultValue.textContent = code;
                 resultType.textContent = '类型: ' + formatBarcodeType(type);
                 resultTime.textContent = '时间: ' + formatTimestamp(timestamp);
                 
-                // 如果有产品信息，显示在扫码结果中
-                if (productInfo.name) {
-                    resultValue.textContent += ` (${productInfo.name}`;
-                    if (productInfo.price) {
-                        resultValue.textContent += `, ¥${productInfo.price.toFixed(2)}`;
+                // 创建文档片段来显示所有匹配的记录
+                if (matchingItems.length > 0) {
+                    // 清除之前的结果
+                    while (latestScanResult.childElementCount > 4) {
+                        latestScanResult.removeChild(latestScanResult.lastChild);
                     }
-                    resultValue.textContent += ')';
+                    
+                    // 创建匹配记录列表标题
+                    const matchesTitle = document.createElement('h4');
+                    matchesTitle.textContent = '匹配的历史记录:';
+                    matchesTitle.style.marginTop = '10px';
+                    latestScanResult.appendChild(matchesTitle);
+                    
+                    // 创建匹配记录列表
+                    const matchesList = document.createElement('div');
+                    matchesList.style.marginTop = '5px';
+                    
+                    matchingItems.forEach((item, index) => {
+                        const matchItem = document.createElement('div');
+                        matchItem.style.padding = '5px 0';
+                        matchItem.style.borderBottom = index < matchingItems.length - 1 ? '1px solid #444' : 'none';
+                        
+                        let itemText = item.productName || '未命名产品';
+                        if (item.price) {
+                            itemText += `, ¥${item.price.toFixed(2)}`;
+                        }
+                        if (item.store) {
+                            itemText += ` (${item.store})`;
+                        }
+                        
+                        matchItem.textContent = itemText;
+                        matchesList.appendChild(matchItem);
+                    });
+                    
+                    latestScanResult.appendChild(matchesList);
+                    
+                    // 使用最近一条记录的信息自动填充表单
+                    const mostRecent = matchingItems[0];
+                    if (mostRecent.productName) {
+                        productNameInput.value = mostRecent.productName;
+                    }
+                    if (mostRecent.price) {
+                        productPriceInput.value = mostRecent.price;
+                    }
+                    if (mostRecent.store) {
+                        productStoreInput.value = mostRecent.store;
+                    }
                 }
                 
                 latestScanResult.style.display = 'block';
@@ -881,14 +912,6 @@
                 // 自动填充条码到表单
                 productCodeInput.value = code;
                 
-                // 自动填充产品名称和价格字段
-                if (productInfo.name) {
-                    productNameInput.value = productInfo.name;
-                }
-                if (productInfo.price) {
-                    productPriceInput.value = productInfo.price;
-                }
-
                 // 播放提示音
                 playBeepSound();
 
@@ -897,15 +920,13 @@
                     navigator.vibrate(100);
                 }
 
-                // 添加到历史记录(如果是新条码)
-                if (existingIndex === -1) {
-                    addToHistory({
-                        code: code,
-                        type: type,
-                        timestamp: timestamp,
-                        productName: ''
-                    });
-                }
+                // 无论是否存在相同条码，都添加到历史记录中
+                addToHistory({
+                    code: code,
+                    type: type,
+                    timestamp: timestamp,
+                    productName: ''
+                });
                 
                 // 扫码成功后停止扫码器
                 stopScanner();
@@ -917,6 +938,7 @@
             function saveProduct() {
                 const name = productNameInput.value.trim();
                 const code = productCodeInput.value.trim();
+                const store = productStoreInput.value.trim();
 
                 if (!name) {
                     showMessage('请输入产品名称', true);
@@ -931,23 +953,15 @@
                 // 获取价格信息
                 const price = productPriceInput.value.trim() ? parseFloat(productPriceInput.value.trim()) : null;
 
-                // 更新或添加到历史记录
-                const existingIndex = scanHistory.findIndex(item => item.code === code);
-
-                if (existingIndex !== -1) {
-                    // 更新现有记录
-                    scanHistory[existingIndex].productName = name;
-                    scanHistory[existingIndex].price = price;
-                } else {
-                    // 添加新记录
-                    addToHistory({
-                        code: code,
-                        type: '未知',
-                        timestamp: new Date(),
-                        productName: name,
-                        price: price
-                    });
-                }
+                // 添加新记录（不再检查是否存在相同条码）
+                addToHistory({
+                    code: code,
+                    type: '未知',
+                    timestamp: new Date(),
+                    productName: name,
+                    price: price,
+                    store: store || '未指定'
+                });
 
                 // 保存历史记录
                 saveHistory();
@@ -999,7 +1013,7 @@
                         <div class="history-item-info">
                             <h4>${displayName}</h4>
                             <p>${item.code}</p>
-                            <p>${item.price ? `¥${item.price.toFixed(2)}` : "无价格"}</p>
+                            <p>${item.price ? `¥${item.price.toFixed(2)}` : "无价格"} - ${item.store || "未知商店"}</p>
                             <p>${formatTimestamp(new Date(item.timestamp))}</p>
                         </div>
                         <div class="history-actions">
@@ -1028,6 +1042,8 @@
                 // 填充表单
                 productNameInput.value = item.productName || '';
                 productCodeInput.value = item.code;
+                productPriceInput.value = item.price || '';
+                productStoreInput.value = item.store || '';
 
                 // 滚动到表单
                 productNameInput.scrollIntoView({behavior: 'smooth'});
@@ -1048,6 +1064,8 @@
             function clearForm() {
                 productNameInput.value = '';
                 productCodeInput.value = '';
+                productPriceInput.value = '';
+                productStoreInput.value = '';
             }
 
             // 清空历史记录
@@ -1325,6 +1343,7 @@
                     // 获取产品信息
                     const productName = productNameInput.value.trim() || '';
                     const price = productPriceInput.value.trim() ? parseFloat(productPriceInput.value.trim()) : null;
+                    const store = productStoreInput.value.trim() || '';
                     
                     // 构建FormData对象
                     const formData = new FormData();
@@ -1334,6 +1353,7 @@
                     if (price !== null) {
                         formData.append('price', price.toString());
                     }
+                    formData.append('store', store);
                     
                     // 发送多媒体上传请求
                     const response = await fetch('https://api.yourserver.com/upload', {
@@ -1354,24 +1374,16 @@
                     
                     // 将图片URL保存到历史记录中
                     if (result.imageUrl) {
-                        // 查找对应条码的历史记录
-                        const existingIndex = scanHistory.findIndex(item => item.code === barcode);
-                        if (existingIndex !== -1) {
-                            // 更新历史记录中的图片URL
-                            scanHistory[existingIndex].imageUrl = result.imageUrl;
-                            // 保存更新后的历史记录
-                            saveHistory();
-                        } else {
-                            // 如果没有找到对应记录，创建新记录
-                            addToHistory({
-                                code: barcode,
-                                type: 'UNKNOWN',
-                                timestamp: new Date(),
-                                productName: productName,
-                                price: price,
-                                imageUrl: result.imageUrl
-                            });
-                        }
+                        // 无论是否存在相同条码，都添加到历史记录中
+                        addToHistory({
+                            code: barcode,
+                            type: 'UNKNOWN',
+                            timestamp: new Date(),
+                            productName: productName,
+                            price: price,
+                            store: store,
+                            imageUrl: result.imageUrl
+                        });
                     }
                 } catch (error) {
                     console.error('上传图片到服务器失败:', error);
@@ -1394,6 +1406,7 @@
                     modal.style.height = '100%';
                     modal.style.backgroundColor = 'rgba(0,0,0,0.9)';
                     modal.style.display = 'flex';
+                    modal.style.flexDirection = 'column';
                     modal.style.justifyContent = 'center';
                     modal.style.alignItems = 'center';
                     modal.style.zIndex = '3000';
@@ -1402,8 +1415,27 @@
                     const img = document.createElement('img');
                     img.src = item.imageUrl;
                     img.style.maxWidth = '90%';
-                    img.style.maxHeight = '80%';
+                    img.style.maxHeight = '70%';
                     img.style.objectFit = 'contain';
+                    
+                    // 创建商店信息元素
+                    const infoDiv = document.createElement('div');
+                    infoDiv.style.color = 'white';
+                    infoDiv.style.marginTop = '15px';
+                    infoDiv.style.textAlign = 'center';
+                    infoDiv.style.padding = '10px';
+                    infoDiv.style.backgroundColor = 'rgba(40, 40, 40, 0.7)';
+                    infoDiv.style.borderRadius = '8px';
+                    infoDiv.style.maxWidth = '80%';
+                    
+                    let infoText = item.productName || '未命名产品';
+                    if (item.price) {
+                        infoText += ` - ¥${item.price.toFixed(2)}`;
+                    }
+                    if (item.store) {
+                        infoText += `<br>商店: ${item.store}`;
+                    }
+                    infoDiv.innerHTML = infoText;
                     
                     // 创建关闭按钮
                     const closeBtn = document.createElement('button');
@@ -1424,6 +1456,7 @@
                     
                     // 添加到模态框
                     modal.appendChild(img);
+                    modal.appendChild(infoDiv);
                     modal.appendChild(closeBtn);
                     
                     // 添加到body
@@ -1440,32 +1473,61 @@
                 const type = result.getBarcodeFormat().toString();
                 const timestamp = new Date();
                 
-                // 在历史记录中查找对应的条形码
-                const existingIndex = scanHistory.findIndex(item => item.code === code);
-                let productInfo = {
-                    name: '',
-                    price: null
-                };
+                // 在历史记录中查找所有匹配的条形码
+                const matchingItems = scanHistory.filter(item => item.code === code);
                 
-                // 如果找到匹配记录，获取产品信息
-                if (existingIndex !== -1) {
-                    const item = scanHistory[existingIndex];
-                    productInfo.name = item.productName || '';
-                    productInfo.price = item.price || null;
-                }
-
                 // 更新UI显示结果
                 resultValue.textContent = code;
                 resultType.textContent = '类型: ' + formatBarcodeType(type);
                 resultTime.textContent = '时间: ' + formatTimestamp(timestamp) + ' (从图像中检测)';
                 
-                // 如果有产品信息，显示在扫码结果中
-                if (productInfo.name) {
-                    resultValue.textContent += ` (${productInfo.name}`;
-                    if (productInfo.price) {
-                        resultValue.textContent += `, ¥${productInfo.price.toFixed(2)}`;
+                // 创建文档片段来显示所有匹配的记录
+                if (matchingItems.length > 0) {
+                    // 清除之前的结果
+                    while (latestScanResult.childElementCount > 4) {
+                        latestScanResult.removeChild(latestScanResult.lastChild);
                     }
-                    resultValue.textContent += ')';
+                    
+                    // 创建匹配记录列表标题
+                    const matchesTitle = document.createElement('h4');
+                    matchesTitle.textContent = '匹配的历史记录:';
+                    matchesTitle.style.marginTop = '10px';
+                    latestScanResult.appendChild(matchesTitle);
+                    
+                    // 创建匹配记录列表
+                    const matchesList = document.createElement('div');
+                    matchesList.style.marginTop = '5px';
+                    
+                    matchingItems.forEach((item, index) => {
+                        const matchItem = document.createElement('div');
+                        matchItem.style.padding = '5px 0';
+                        matchItem.style.borderBottom = index < matchingItems.length - 1 ? '1px solid #444' : 'none';
+                        
+                        let itemText = item.productName || '未命名产品';
+                        if (item.price) {
+                            itemText += `, ¥${item.price.toFixed(2)}`;
+                        }
+                        if (item.store) {
+                            itemText += ` (${item.store})`;
+                        }
+                        
+                        matchItem.textContent = itemText;
+                        matchesList.appendChild(matchItem);
+                    });
+                    
+                    latestScanResult.appendChild(matchesList);
+                    
+                    // 使用最近一条记录的信息自动填充表单
+                    const mostRecent = matchingItems[0];
+                    if (mostRecent.productName) {
+                        productNameInput.value = mostRecent.productName;
+                    }
+                    if (mostRecent.price) {
+                        productPriceInput.value = mostRecent.price;
+                    }
+                    if (mostRecent.store) {
+                        productStoreInput.value = mostRecent.store;
+                    }
                 }
                 
                 latestScanResult.style.display = 'block';
@@ -1473,26 +1535,21 @@
                 // 自动填充条码到表单
                 productCodeInput.value = code;
                 
-                // 自动填充产品名称和价格字段
-                if (productInfo.name) {
-                    productNameInput.value = productInfo.name;
-                }
-                if (productInfo.price) {
-                    productPriceInput.value = productInfo.price;
-                }
-
                 // 播放提示音
                 playBeepSound();
 
-                // 添加到历史记录(如果是新条码)
-                if (existingIndex === -1) {
-                    addToHistory({
-                        code: code,
-                        type: type,
-                        timestamp: timestamp,
-                        productName: ''
-                    });
+                // 振动反馈(如果支持)
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(100);
                 }
+
+                // 无论是否存在相同条码，都添加到历史记录中
+                addToHistory({
+                    code: code,
+                    type: type,
+                    timestamp: timestamp,
+                    productName: ''
+                });
 
                 showMessage('从图像中检测到条码');
             }
