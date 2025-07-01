@@ -166,6 +166,27 @@
             display: flex;
             gap: 10px;
         }
+        
+        .camera-actions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 80%;
+            max-width: 250px;
+        }
+        
+        .scan-btn {
+            padding: 15px 0;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
 
         .control-button {
             width: 50px;
@@ -509,7 +530,7 @@
         <div class="main-content">
             <!-- 扫码区域 -->
             <div class="scanner-container">
-                <video id="scanner-video" autoplay playsinline></video>
+                <video id="scanner-video" autoplay playsinline style="display:none;"></video>
                 <div class="scanner-overlay">
                     <div class="scan-area">
                         <div class="corner corner-top-left"></div>
@@ -518,7 +539,12 @@
                         <div class="corner corner-bottom-right"></div>
                     </div>
                 </div>
-                <div class="camera-controls">
+                <div class="camera-actions">
+                    <button id="start-scan" class="btn btn-primary scan-btn">开始扫码</button>
+                    <button id="upload-photo" class="btn btn-secondary scan-btn" style="display:none;">上传照片</button>
+                    <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none;">
+                </div>
+                <div class="camera-controls" style="display:none;">
                     <button id="toggle-flash" class="control-button">⚡</button>
                     <button id="switch-camera" class="control-button">⟲</button>
                 </div>
@@ -534,9 +560,12 @@
                 </div>
 
                 <div class="product-form">
-                    <div class="form-group">
+                    <div class="form-group" style="position: relative;">
                         <label for="product-name">产品名称</label>
-                        <input type="text" id="product-name" placeholder="请输入产品名称">
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="product-name" placeholder="请输入产品名称" style="flex: 1;">
+                            <button id="quick-save" class="btn btn-secondary" style="width: 60px; padding: 0;">保存</button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="product-code">条码</label>
@@ -607,6 +636,7 @@
             const productNameInput = document.getElementById('product-name');
             const productCodeInput = document.getElementById('product-code');
             const saveProductBtn = document.getElementById('save-product');
+            const quickSaveBtn = document.getElementById('quick-save');
             const clearFormBtn = document.getElementById('clear-form');
             const historyList = document.getElementById('history-list');
             const clearHistoryBtn = document.getElementById('clear-history');
@@ -616,6 +646,10 @@
             const requestPermissionBtn = document.getElementById('request-permission');
             const statusMessage = document.getElementById('status-message');
             const loader = document.getElementById('loader');
+            const startScanBtn = document.getElementById('start-scan');
+            const uploadPhotoBtn = document.getElementById('upload-photo');
+            const photoInput = document.getElementById('photo-input');
+            const cameraControls = document.querySelector('.camera-controls');
 
             // 变量
             let selectedDeviceId;
@@ -625,34 +659,57 @@
             let availableDevices = [];
             let currentDeviceIndex = 0;
             let scanHistory = [];
+            let scannerActive = false;
 
             // 初始化
-            initScanner();
+            // 只初始化ZXing库，但不立即开始摄像头
+            initZXing();
             loadHistory();
 
             // 事件监听器
             saveProductBtn.addEventListener('click', saveProduct);
+            quickSaveBtn.addEventListener('click', saveProduct);
             clearFormBtn.addEventListener('click', clearForm);
             clearHistoryBtn.addEventListener('click', clearHistory);
             toggleFlashBtn.addEventListener('click', toggleFlash);
             switchCameraBtn.addEventListener('click', switchCamera);
             requestPermissionBtn.addEventListener('click', requestCameraPermission);
+            startScanBtn.addEventListener('click', toggleScanner);
+            uploadPhotoBtn.addEventListener('click', triggerPhotoUpload);
+            photoInput.addEventListener('change', handlePhotoUpload);
 
-            // 初始化扫码器
-            async function initScanner() {
+            // 初始化ZXing库
+            async function initZXing() {
                 showLoader(true);
-
+                
                 try {
+                    // 初始化ZXing代码阅读器
+                    codeReader = new ZXing.BrowserMultiFormatReader();
+                    
                     // 检查是否支持Web API
                     if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
                         throw new Error('浏览器不支持访问相机');
                     }
+                    
+                    showMessage('扫码器已准备就绪');
+                } catch (error) {
+                    console.error('初始化扫码库失败:', error);
+                    showMessage('初始化失败: ' + error.message, true);
+                } finally {
+                    showLoader(false);
+                }
+            }
+            
+            // 启动相机和扫码器
+            async function startScanner() {
+                showLoader(true);
 
+                try {
                     // 检查相机权限
                     const permissionStatus = await navigator.permissions.query({name: 'camera'});
                     if (permissionStatus.state === 'denied') {
                         showPermissionPrompt();
-                        return;
+                        return false;
                     }
 
                     // 获取可用摄像头列表
@@ -666,23 +723,62 @@
                     // 默认使用第一个相机
                     selectedDeviceId = availableDevices[0].deviceId;
 
-                    // 初始化ZXing代码阅读器
-                    codeReader = new ZXing.BrowserMultiFormatReader();
-
+                    // 显示相机视频元素和控制
+                    video.style.display = 'block';
+                    cameraControls.style.display = 'flex';
+                    
                     // 开始解码
                     await startDecoding();
+                    
+                    scannerActive = true;
+                    startScanBtn.style.display = 'none';
+                    uploadPhotoBtn.style.display = 'none';
 
-                    showMessage('扫码器已准备就绪');
+                    showMessage('扫码已开始，对准条形码或二维码');
+                    return true;
                 } catch (error) {
-                    console.error('初始化扫码器失败:', error);
-                    showMessage('初始化扫码器失败: ' + error.message, true);
+                    console.error('启动扫码器失败:', error);
+                    showMessage('启动扫码器失败: ' + error.message, true);
 
                     // 如果是权限错误，显示权限提示
                     if (error.name === 'NotAllowedError') {
                         showPermissionPrompt();
                     }
+                    return false;
                 } finally {
                     showLoader(false);
+                }
+            }
+            
+            // 停止扫码器
+            function stopScanner() {
+                if (codeReader) {
+                    codeReader.reset();
+                }
+                
+                // 隐藏相机视频元素和控制
+                video.style.display = 'none';
+                cameraControls.style.display = 'none';
+                
+                // 释放摄像头资源
+                if (video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                    videoTrack = null;
+                }
+                
+                scannerActive = false;
+                startScanBtn.style.display = 'block';
+                uploadPhotoBtn.style.display = 'block';
+            }
+            
+            // 切换扫码器状态
+            async function toggleScanner() {
+                if (scannerActive) {
+                    stopScanner();
+                } else {
+                    await startScanner();
                 }
             }
 
@@ -756,6 +852,9 @@
                         productName: ''
                     });
                 }
+                
+                // 扫码成功后停止扫码器
+                stopScanner();
 
                 showMessage('扫码成功');
             }
@@ -1068,16 +1167,124 @@
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
                     // 页面隐藏时暂停相机
-                    if (codeReader) {
+                    if (codeReader && scannerActive) {
                         codeReader.reset();
                     }
                 } else {
                     // 页面重新可见时恢复相机
-                    if (codeReader) {
+                    if (codeReader && scannerActive) {
                         startDecoding();
                     }
                 }
             });
+            
+            // 触发照片上传
+            function triggerPhotoUpload() {
+                photoInput.click();
+            }
+            
+            // 处理照片上传
+            async function handlePhotoUpload(event) {
+                if (!event.target.files || !event.target.files[0]) {
+                    return;
+                }
+                
+                const file = event.target.files[0];
+                showLoader(true);
+                
+                try {
+                    // 从照片中检测条形码/二维码
+                    const imageUrl = URL.createObjectURL(file);
+                    const img = new Image();
+                    
+                    img.onload = async () => {
+                        try {
+                            // 使用ZXing从图像解码
+                            const hints = new Map();
+                            const formats = [
+                                ZXing.BarcodeFormat.QR_CODE,
+                                ZXing.BarcodeFormat.DATA_MATRIX,
+                                ZXing.BarcodeFormat.AZTEC,
+                                ZXing.BarcodeFormat.EAN_13,
+                                ZXing.BarcodeFormat.EAN_8,
+                                ZXing.BarcodeFormat.CODE_128,
+                                ZXing.BarcodeFormat.CODE_39,
+                                ZXing.BarcodeFormat.CODE_93
+                            ];
+                            hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+                            
+                            // 创建临时画布来处理图像
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, img.width, img.height);
+                            
+                            const imageData = ctx.getImageData(0, 0, img.width, img.height);
+                            const source = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+                            const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
+                            
+                            const reader = new ZXing.MultiFormatReader();
+                            const result = reader.decode(bitmap, hints);
+                            
+                            // 处理扫描结果
+                            handleImageScanResult(result);
+                        } catch (error) {
+                            console.error('图像解码失败:', error);
+                            showMessage('未能从图像中检测到条形码，请尝试其他图像或直接扫码', true);
+                        } finally {
+                            showLoader(false);
+                            // 清除文件输入，以便可以再次选择相同的文件
+                            photoInput.value = '';
+                        }
+                    };
+                    
+                    img.onerror = () => {
+                        showLoader(false);
+                        showMessage('加载图像失败，请尝试其他图像', true);
+                        photoInput.value = '';
+                    };
+                    
+                    img.src = imageUrl;
+                } catch (error) {
+                    console.error('处理上传图像失败:', error);
+                    showMessage('处理图像失败', true);
+                    showLoader(false);
+                    photoInput.value = '';
+                }
+            }
+            
+            // 处理图像扫描结果
+            function handleImageScanResult(result) {
+                const code = result.getText();
+                const type = result.getBarcodeFormat().toString();
+                const timestamp = new Date();
+
+                // 更新UI显示结果
+                resultValue.textContent = code;
+                resultType.textContent = '类型: ' + formatBarcodeType(type);
+                resultTime.textContent = '时间: ' + formatTimestamp(timestamp) + ' (从图像中检测)'; 
+                latestScanResult.style.display = 'block';
+
+                // 自动填充条码到表单
+                productCodeInput.value = code;
+
+                // 播放提示音
+                playBeepSound();
+
+                // 添加到历史记录(如果是新条码)
+                const existingIndex = scanHistory.findIndex(item => item.code === code);
+                if (existingIndex === -1) {
+                    addToHistory({
+                        code: code,
+                        type: type,
+                        timestamp: timestamp,
+                        productName: ''
+                    });
+                }
+
+                showMessage('从图像中检测到条码');
+            }
 
             // 设备方向变化处理（调整UI）
             window.addEventListener('resize', () => {
