@@ -514,6 +514,47 @@
             let collectedStickers = [];
             let activeTab = 'collect';
             let selectedSticker = null; // 选择的贴纸
+            
+            // 计算两个GPS位置之间的距离（以米为单位）
+            function calculateDistance(pos1, pos2) {
+                // 使用Haversine公式计算地球表面两点间距离
+                const R = 6371000; // 地球半径，单位米
+                const lat1 = pos1.latitude * Math.PI / 180;
+                const lat2 = pos2.latitude * Math.PI / 180;
+                const deltaLat = (pos2.latitude - pos1.latitude) * Math.PI / 180;
+                const deltaLon = (pos2.longitude - pos1.longitude) * Math.PI / 180;
+                
+                const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+                          Math.cos(lat1) * Math.cos(lat2) *
+                          Math.sin(deltaLon/2) * Math.sin(deltaLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                
+                return R * c; // 返回距离，单位米
+            }
+            
+            // 查找距离当前位置指定范围内的最近位置
+            function findNearbyLocation(currentPos, radiusInMeters) {
+                if (!savedLocations || savedLocations.length === 0) {
+                    return null;
+                }
+                
+                let nearestLocation = null;
+                let minDistance = Infinity;
+                
+                savedLocations.forEach(location => {
+                    const distance = calculateDistance(
+                        {latitude: currentPos.latitude, longitude: currentPos.longitude},
+                        {latitude: location.latitude, longitude: location.longitude}
+                    );
+                    
+                    if (distance <= radiusInMeters && distance < minDistance) {
+                        minDistance = distance;
+                        nearestLocation = location;
+                    }
+                });
+                
+                return nearestLocation;
+            }
 
             // 贴纸表情数组
             const stickerEmojis = [
@@ -764,8 +805,19 @@
             }
 
             function collectSticker() {
-                // 如果有选定的贴纸则使用它，否则随机选择一个
-                const stickerEmoji = selectedSticker ? selectedSticker : stickerEmojis[Math.floor(Math.random() * stickerEmojis.length)];
+                let stickerEmoji;
+                
+                // 检查附近15米内是否有保存的位置
+                const nearbyLocation = findNearbyLocation(currentPosition, 15);
+                
+                if (nearbyLocation) {
+                    // 如果找到附近位置，使用该位置的贴纸
+                    stickerEmoji = nearbyLocation.sticker;
+                    showStatusMessage(`在附近找到"${nearbyLocation.name}"，获得其贴纸！`, false);
+                } else {
+                    // 如果没找到附近位置，按原有逻辑收集随机或选定的贴纸
+                    stickerEmoji = selectedSticker ? selectedSticker : stickerEmojis[Math.floor(Math.random() * stickerEmojis.length)];
+                }
 
                 // 创建新贴纸对象
                 const newSticker = {
