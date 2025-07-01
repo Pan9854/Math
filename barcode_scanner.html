@@ -568,7 +568,7 @@
                         <label for="product-name">产品名称</label>
                         <div style="display: flex; gap: 10px;">
                             <input type="text" id="product-name" placeholder="请输入产品名称" style="flex: 1;">
-                            <button id="quick-save" class="btn btn-secondary" style="width: 60px; padding: 0;">保存</button>
+                            <button id="upload-photo" class="btn btn-secondary" style="width: 80px; padding: 0;">上传照片</button>
                         </div>
                     </div>
                     <div class="form-group">
@@ -579,7 +579,7 @@
                         <label for="product-price">价格</label>
                         <div style="position: relative;">
                             <input type="number" id="product-price" placeholder="输入产品价格" step="0.01">
-                            <span style="position: absolute; left: 12px; top: 12px; color: var(--text-secondary);">¥</span>
+                            <span style="position: absolute; left: 12px; top: 12px; color: var(--text-secondary);">$</span>
                             <div style="position: absolute; left: 0; top: 0; width: 30px; height: 100%;"></div>
                             <style>
                                 #product-price {
@@ -592,9 +592,7 @@
                         <label for="product-store">商店</label>
                         <input type="text" id="product-store" placeholder="输入购买商店">
                     </div>
-                    <div class="form-group">
-                        <button id="upload-photo" class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">上传照片</button>
-                    </div>
+                    
                     <div class="action-buttons">
                         <button id="save-product" class="btn btn-primary">保存</button>
                         <button id="clear-form" class="btn btn-secondary">清除</button>
@@ -603,7 +601,7 @@
             </div>
 
             <!-- 历史记录区域 -->
-            <div class="history-container">
+            <div class="history-container" style="display: none;">
                 <div class="history-header">
                     <h3>历史记录</h3>
                     <button id="clear-history" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;">清空</button>
@@ -662,7 +660,7 @@
             const productPriceInput = document.getElementById('product-price');
             const productStoreInput = document.getElementById('product-store');
             const saveProductBtn = document.getElementById('save-product');
-            const quickSaveBtn = document.getElementById('quick-save');
+            //const quickSaveBtn = document.getElementById('quick-save');
             const clearFormBtn = document.getElementById('clear-form');
             const historyList = document.getElementById('history-list');
             const clearHistoryBtn = document.getElementById('clear-history');
@@ -694,7 +692,7 @@
 
             // 事件监听器
             saveProductBtn.addEventListener('click', saveProduct);
-            quickSaveBtn.addEventListener('click', saveProduct);
+            //quickSaveBtn.addEventListener('click', saveProduct);
             clearFormBtn.addEventListener('click', clearForm);
             clearHistoryBtn.addEventListener('click', clearHistory);
             //toggleFlashBtn.addEventListener('click', toggleFlash);
@@ -897,16 +895,72 @@
                         const matchItem = document.createElement('div');
                         matchItem.style.padding = '5px 0';
                         matchItem.style.borderBottom = index < matchingItems.length - 1 ? '1px solid #444' : 'none';
-                        
+                        matchItem.style.display = 'flex';
+                        matchItem.style.justifyContent = 'space-between';
+                        matchItem.style.alignItems = 'center';
+
+                        // 左侧信息区域
+                        const itemInfo = document.createElement('div');
                         let itemText = item.productName || '未命名产品';
                         if (item.price) {
-                            itemText += `, ¥${item.price.toFixed(2)}`;
+                            itemText += ', ' + '$' + item.price.toFixed(2);
                         }
                         if (item.store) {
-                            itemText += ` (${item.store})`;
+                            itemText += ' (' + item.store + ')';
                         }
-                        
-                        matchItem.textContent = itemText;
+                        itemInfo.textContent = itemText;
+
+                        // 右侧操作按钮区
+                        const itemActions = document.createElement('div');
+                        itemActions.style.display = 'flex';
+                        itemActions.style.gap = '5px';
+
+                        // 编辑按钮
+                        const editBtn = document.createElement('button');
+                        editBtn.textContent = '✏️';
+                        editBtn.style.border = 'none';
+                        editBtn.style.background = 'transparent';
+                        editBtn.style.color = 'white';
+                        editBtn.style.cursor = 'pointer';
+                        editBtn.style.fontSize = '0.9rem';
+                        editBtn.onclick = function() {
+                            // 找到历史记录中的对应项索引
+                            const historyIndex = scanHistory.findIndex(histItem => 
+                                histItem.code === item.code && 
+                                histItem.productName === item.productName && 
+                                histItem.timestamp.toString() === item.timestamp.toString());
+
+                            if (historyIndex !== -1) {
+                                editHistoryItem(historyIndex);
+                            }
+                        };
+
+                        // 删除按钮
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = '🗑️';
+                        deleteBtn.style.border = 'none';
+                        deleteBtn.style.background = 'transparent';
+                        deleteBtn.style.color = 'white';
+                        deleteBtn.style.cursor = 'pointer';
+                        deleteBtn.style.fontSize = '0.9rem';
+                        deleteBtn.onclick = function() {
+                            // 找到历史记录中的对应项索引
+                            const historyIndex = scanHistory.findIndex(histItem => 
+                                histItem.code === item.code && 
+                                histItem.productName === item.productName && 
+                                histItem.timestamp.toString() === item.timestamp.toString());
+
+                            if (historyIndex !== -1) {
+                                deleteHistoryItem(historyIndex);
+                            }
+                        };
+
+                        itemActions.appendChild(editBtn);
+                        itemActions.appendChild(deleteBtn);
+
+                        // 将两部分添加到匹配项容器中
+                        matchItem.appendChild(itemInfo);
+                        matchItem.appendChild(itemActions);
                         matchesList.appendChild(matchItem);
                     });
                     
@@ -1048,7 +1102,7 @@
                         <div class="history-item-info">
                             <h4>${displayName}</h4>
                             <p>${item.code}</p>
-                            <p>${item.price ? `¥${item.price.toFixed(2)}` : "无价格"} - ${item.store || "未知商店"}</p>
+                            <p>${item.price ? `$${item.price.toFixed(2)}` : "无价格"} - ${item.store || "未知商店"}</p>
                             <p>${formatTimestamp(new Date(item.timestamp))}</p>
                         </div>
                         <div class="history-actions">
@@ -1417,7 +1471,7 @@
                     
                     let infoText = item.productName || '未命名产品';
                     if (item.price) {
-                        infoText += ` - ¥${item.price.toFixed(2)}`;
+                        infoText += ` - $${item.price.toFixed(2)}`;
                     }
                     if (item.store) {
                         infoText += `<br>商店: ${item.store}`;
@@ -1503,7 +1557,7 @@
                         
                         let itemText = item.productName || '未命名产品';
                         if (item.price) {
-                            itemText += `, ¥${item.price.toFixed(2)}`;
+                            itemText += `, $${item.price.toFixed(2)}`;
                         }
                         if (item.store) {
                             itemText += ` (${item.store})`;
