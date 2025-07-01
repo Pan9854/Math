@@ -847,15 +847,47 @@
                 const code = result.getText();
                 const type = result.getBarcodeFormat().toString();
                 const timestamp = new Date();
+                
+                // 在历史记录中查找对应的条形码
+                const existingIndex = scanHistory.findIndex(item => item.code === code);
+                let productInfo = {
+                    name: '',
+                    price: null
+                };
+                
+                // 如果找到匹配记录，获取产品信息
+                if (existingIndex !== -1) {
+                    const item = scanHistory[existingIndex];
+                    productInfo.name = item.productName || '';
+                    productInfo.price = item.price || null;
+                }
 
                 // 更新UI显示结果
                 resultValue.textContent = code;
                 resultType.textContent = '类型: ' + formatBarcodeType(type);
                 resultTime.textContent = '时间: ' + formatTimestamp(timestamp);
+                
+                // 如果有产品信息，显示在扫码结果中
+                if (productInfo.name) {
+                    resultValue.textContent += ` (${productInfo.name}`;
+                    if (productInfo.price) {
+                        resultValue.textContent += `, ¥${productInfo.price.toFixed(2)}`;
+                    }
+                    resultValue.textContent += ')';
+                }
+                
                 latestScanResult.style.display = 'block';
 
                 // 自动填充条码到表单
                 productCodeInput.value = code;
+                
+                // 自动填充产品名称和价格字段
+                if (productInfo.name) {
+                    productNameInput.value = productInfo.name;
+                }
+                if (productInfo.price) {
+                    productPriceInput.value = productInfo.price;
+                }
 
                 // 播放提示音
                 playBeepSound();
@@ -866,7 +898,6 @@
                 }
 
                 // 添加到历史记录(如果是新条码)
-                const existingIndex = scanHistory.findIndex(item => item.code === code);
                 if (existingIndex === -1) {
                     addToHistory({
                         code: code,
@@ -1291,13 +1322,26 @@
             // 上传图片到服务器
             async function uploadImageToServer(file, barcode) {
                 try {
+                    // 获取产品信息
+                    const productName = productNameInput.value.trim() || '';
+                    const price = productPriceInput.value.trim() ? parseFloat(productPriceInput.value.trim()) : null;
+                    
+                    // 构建FormData对象
                     const formData = new FormData();
                     formData.append('image', file);
                     formData.append('barcode', barcode);
+                    formData.append('productName', productName);
+                    if (price !== null) {
+                        formData.append('price', price.toString());
+                    }
                     
+                    // 发送多媒体上传请求
                     const response = await fetch('https://api.yourserver.com/upload', {
                         method: 'POST',
                         body: formData,
+                        headers: {
+                            // 不要设置 Content-Type，让浏览器自动设置正确的 multipart/form-data 与边界
+                        },
                     });
                     
                     if (!response.ok) {
@@ -1307,6 +1351,28 @@
                     const result = await response.json();
                     console.log('图片上传成功:', result);
                     showMessage('图片已上传到服务器');
+                    
+                    // 将图片URL保存到历史记录中
+                    if (result.imageUrl) {
+                        // 查找对应条码的历史记录
+                        const existingIndex = scanHistory.findIndex(item => item.code === barcode);
+                        if (existingIndex !== -1) {
+                            // 更新历史记录中的图片URL
+                            scanHistory[existingIndex].imageUrl = result.imageUrl;
+                            // 保存更新后的历史记录
+                            saveHistory();
+                        } else {
+                            // 如果没有找到对应记录，创建新记录
+                            addToHistory({
+                                code: barcode,
+                                type: 'UNKNOWN',
+                                timestamp: new Date(),
+                                productName: productName,
+                                price: price,
+                                imageUrl: result.imageUrl
+                            });
+                        }
+                    }
                 } catch (error) {
                     console.error('上传图片到服务器失败:', error);
                     showMessage('图片上传失败，但扫码结果已保存', true);
@@ -1316,8 +1382,56 @@
             // 查看历史记录中的照片
             function viewHistoryItemPhoto(index) {
                 const item = scanHistory[index];
-                // 这里实现查看照片的逻辑
-                showMessage('照片查看功能将在未来版本推出');
+                
+                // 检查历史记录项是否包含图片URL
+                if (item && item.imageUrl) {
+                    // 创建模态框显示照片
+                    const modal = document.createElement('div');
+                    modal.style.position = 'fixed';
+                    modal.style.top = '0';
+                    modal.style.left = '0';
+                    modal.style.width = '100%';
+                    modal.style.height = '100%';
+                    modal.style.backgroundColor = 'rgba(0,0,0,0.9)';
+                    modal.style.display = 'flex';
+                    modal.style.justifyContent = 'center';
+                    modal.style.alignItems = 'center';
+                    modal.style.zIndex = '3000';
+                    
+                    // 创建图片元素
+                    const img = document.createElement('img');
+                    img.src = item.imageUrl;
+                    img.style.maxWidth = '90%';
+                    img.style.maxHeight = '80%';
+                    img.style.objectFit = 'contain';
+                    
+                    // 创建关闭按钮
+                    const closeBtn = document.createElement('button');
+                    closeBtn.textContent = '×';
+                    closeBtn.style.position = 'absolute';
+                    closeBtn.style.top = '20px';
+                    closeBtn.style.right = '20px';
+                    closeBtn.style.background = 'none';
+                    closeBtn.style.border = 'none';
+                    closeBtn.style.color = 'white';
+                    closeBtn.style.fontSize = '30px';
+                    closeBtn.style.cursor = 'pointer';
+                    
+                    // 添加关闭事件
+                    closeBtn.addEventListener('click', () => {
+                        document.body.removeChild(modal);
+                    });
+                    
+                    // 添加到模态框
+                    modal.appendChild(img);
+                    modal.appendChild(closeBtn);
+                    
+                    // 添加到body
+                    document.body.appendChild(modal);
+                } else {
+                    // 处理无照片情况
+                    showMessage('此记录没有关联的照片', true);
+                }
             }
             
             // 处理图像扫描结果
@@ -1325,21 +1439,52 @@
                 const code = result.getText();
                 const type = result.getBarcodeFormat().toString();
                 const timestamp = new Date();
+                
+                // 在历史记录中查找对应的条形码
+                const existingIndex = scanHistory.findIndex(item => item.code === code);
+                let productInfo = {
+                    name: '',
+                    price: null
+                };
+                
+                // 如果找到匹配记录，获取产品信息
+                if (existingIndex !== -1) {
+                    const item = scanHistory[existingIndex];
+                    productInfo.name = item.productName || '';
+                    productInfo.price = item.price || null;
+                }
 
                 // 更新UI显示结果
                 resultValue.textContent = code;
                 resultType.textContent = '类型: ' + formatBarcodeType(type);
-                resultTime.textContent = '时间: ' + formatTimestamp(timestamp) + ' (从图像中检测)'; 
+                resultTime.textContent = '时间: ' + formatTimestamp(timestamp) + ' (从图像中检测)';
+                
+                // 如果有产品信息，显示在扫码结果中
+                if (productInfo.name) {
+                    resultValue.textContent += ` (${productInfo.name}`;
+                    if (productInfo.price) {
+                        resultValue.textContent += `, ¥${productInfo.price.toFixed(2)}`;
+                    }
+                    resultValue.textContent += ')';
+                }
+                
                 latestScanResult.style.display = 'block';
 
                 // 自动填充条码到表单
                 productCodeInput.value = code;
+                
+                // 自动填充产品名称和价格字段
+                if (productInfo.name) {
+                    productNameInput.value = productInfo.name;
+                }
+                if (productInfo.price) {
+                    productPriceInput.value = productInfo.price;
+                }
 
                 // 播放提示音
                 playBeepSound();
 
                 // 添加到历史记录(如果是新条码)
-                const existingIndex = scanHistory.findIndex(item => item.code === code);
                 if (existingIndex === -1) {
                     addToHistory({
                         code: code,
