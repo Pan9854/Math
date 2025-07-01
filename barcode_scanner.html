@@ -748,6 +748,7 @@
 
                     // 默认使用第一个相机
                     selectedDeviceId = availableDevices[0].deviceId;
+                    console.log('可用摄像头:', availableDevices);
 
                     // 显示相机视频元素和控制
                     video.style.display = 'block';
@@ -787,13 +788,6 @@
                 //cameraControls.style.display = 'none';
                 
                 // 释放摄像头资源
-                if (video.srcObject) {
-                    const tracks = video.srcObject.getTracks();
-                    tracks.forEach(track => track.stop());
-                    video.srcObject = null;
-                    videoTrack = null;
-                }
-                
                 scannerActive = false;
                 startScanBtn.style.display = 'block';
                 uploadPhotoBtn.style.display = 'block';
