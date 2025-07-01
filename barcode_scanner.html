@@ -550,6 +550,10 @@
                     <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none;">
                 </div>
                 <!-- 移除摄像头控制按钮 -->
+                <div class="camera-controls" style="display:none;">
+                    <button id="toggle-flash" class="control-button" style="display:none;">⚡</button>
+                    <button id="switch-camera" class="control-button" style="display:none;">⟲</button>
+                </div>
             </div>
 
 
@@ -665,8 +669,8 @@
             const clearFormBtn = document.getElementById('clear-form');
             const historyList = document.getElementById('history-list');
             const clearHistoryBtn = document.getElementById('clear-history');
-            //const toggleFlashBtn = document.getElementById('toggle-flash');
-            //const switchCameraBtn = document.getElementById('switch-camera');
+            const toggleFlashBtn = document.getElementById('toggle-flash');
+            const switchCameraBtn = document.getElementById('switch-camera');
             const permissionPrompt = document.getElementById('permission-prompt');
             const requestPermissionBtn = document.getElementById('request-permission');
             const statusMessage = document.getElementById('status-message');
@@ -674,7 +678,7 @@
             const startScanBtn = document.getElementById('start-scan');
             const uploadPhotoBtn = document.getElementById('upload-photo');
             const photoInput = document.getElementById('photo-input');
-            //const cameraControls = document.querySelector('.camera-controls');
+            const cameraControls = document.querySelector('.camera-controls');
 
             // 变量
             let selectedDeviceId;
