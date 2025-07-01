@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>贴纸收集器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7f9fc;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 100%;
+            min-height: 100vh;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            padding: 10px 0;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4a6cf7;
+            margin: 0;
+        }
+
+        .counter-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.16);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .gps-display {
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+        }
+
+        .gps-value {
+            font-weight: bold;
+            color: #4a6cf7;
+        }
+
+        .gps-accuracy {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .high-accuracy {
+            color: #2ecc71;
+        }
+
+        .medium-accuracy {
+            color: #f39c12;
+        }
+
+        .low-accuracy {
+            color: #e74c3c;
+        }
+
+        .location-form {
+            margin-top: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #4a6cf7;
+            box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.2);
+        }
+
+        .btn {
+            background-color: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+            background-color: #3a5ce5;
+        }
+
+        .btn-disabled {
+            background-color: #b3b3b3;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            height: 6px;
+            background-color: #eee;
+            border-radius: 3px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #4a6cf7;
+            width: 0%;
+            transition: width 1s linear;
+        }
+
+        .stickers-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sticker {
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+            animation: popIn 0.3s forwards;
+            transition: transform 0.2s ease;
+        }
+
+        .sticker:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            70% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .sticker-info {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+            z-index: 100;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .sticker-info.show {
+            transform: translateY(0);
+        }
+
+        .sticker-info-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .sticker-info-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .sticker-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .sticker-detail-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sticker-detail-label {
+            color: #777;
+        }
+
+        .sticker-detail-value {
+            font-weight: 500;
+        }
+
+        .status-message {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            z-index: 200;
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .status-message.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .loading-text {
+            margin-top: 15px;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .saved-locations {
+            margin-top: 15px;
+        }
+
+        .location-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            margin-bottom: 10px;
+            border-left: 4px solid #4a6cf7;
+        }
+
+        .location-name {
+            font-weight: 500;
+        }
+
+        .location-coords {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .location-actions button {
+            background: none;
+            border: none;
+            color: #4a6cf7;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 5px;
+            font-size: 1rem;
+        }
+
+        .tab-container {
+            margin-top: auto;
+            display: flex;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            background-color: white;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 0;
+            text-align: center;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background-color: #4a6cf7;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            margin-bottom: 15px;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>贴纸收集器</h1>
+            <div id="sticker-count" class="counter-badge">0</div>
+        </header>
+
+        <div id="tab-content-collect" class="tab-content active">
+            <!-- GPS卡片 -->
+            <div class="card">
+                <div class="gps-display">
+                    <div>纬度: <span id="latitude" class="gps-value">--</span></div>
+                    <div>经度: <span id="longitude" class="gps-value">--</span></div>
+                    <div>精度: <span id="accuracy" class="gps-value">--</span></div>
+                    <div class="gps-accuracy" id="accuracy-message">正在获取位置...</div>
+                </div>
+
+                <div class="progress-container">
+                    <div id="collect-progress" class="progress-bar"></div>
+                </div>
+
+                <div class="location-form">
+                    <div class="form-group">
+                        <label for="location-name">位置名称</label>
+                        <input type="text" id="location-name" placeholder="给这个位置起个名字...">
+                    </div>
+                    <button id="save-location-btn" class="btn btn-disabled" disabled>保存位置</button>
+                </div>
+            </div>
+
+            <!-- 收集状态 -->
+            <div class="card">
+                <h2>当前状态</h2>
+                <div id="status-text">正在等待位置数据...</div>
+            </div>
+        </div>
+
+        <div id="tab-content-stickers" class="tab-content">
+            <div class="card">
+                <h2>我的贴纸</h2>
+                <div id="stickers-container" class="stickers-container">
+                    <!-- 贴纸将动态添加在这里 -->
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-content-locations" class="tab-content">
+            <div class="card">
+                <h2>已保存的位置</h2>
+                <div id="saved-locations" class="saved-locations">
+                    <!-- 保存的位置将动态添加在这里 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-container">
+            <div id="tab-collect" class="tab active" data-tab="collect">收集</div>
+            <div id="tab-stickers" class="tab" data-tab="stickers">贴纸</div>
+            <div id="tab-locations" class="tab" data-tab="locations">位置</div>
+        </div>
+    </div>
+
+    <div id="sticker-info" class="sticker-info">
+        <div class="sticker-info-header">
+            <div class="sticker-info-title">贴纸信息</div>
+            <button id="close-sticker-info" class="close-btn">×</button>
+        </div>
+        <div id="sticker-detail" class="sticker-detail">
+            <!-- 贴纸详情将动态添加在这里 -->
+        </div>
+    </div>
+
+    <div id="status-message" class="status-message"></div>
+
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">加载中...</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 元素
+            const latitudeElement = document.getElementById('latitude');
+            const longitudeElement = document.getElementById('longitude');
+            const accuracyElement = document.getElementById('accuracy');
+            const accuracyMessageElement = document.getElementById('accuracy-message');
+            const locationNameInput = document.getElementById('location-name');
+            const saveLocationBtn = document.getElementById('save-location-btn');
+            const statusText = document.getElementById('status-text');
+            const stickersContainer = document.getElementById('stickers-container');
+            const savedLocationsContainer = document.getElementById('saved-locations');
+            const collectProgress = document.getElementById('collect-progress');
+            const stickerCountElement = document.getElementById('sticker-count');
+            const stickerInfo = document.getElementById('sticker-info');
+            const closeStickerInfo = document.getElementById('close-sticker-info');
+            const stickerDetail = document.getElementById('sticker-detail');
+            const statusMessage = document.getElementById('status-message');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // 变量
+            let currentPosition = null;
+            let locationWatchId = null;
+            let collectionTimer = null;
+            let collectCounter = 0;
+            let isCollecting = false;
+            let savedLocations = [];
+            let collectedStickers = [];
+            let activeTab = 'collect';
+
+            // 贴纸表情数组
+            const stickerEmojis = [
+                '🌟', '🌈', '🌸', '🍀', '🌺', '🌻', '🦋', '🐢', 
+                '🐬', '🦄', '🍦', '🍭', '🎨', '🎭', '🎪', '🎡',
+                '🎢', '🎠', '🎮', '🧸', '🪁', '🎲', '🎯', '🧩',
+                '🌵', '🌴', '🌲', '🍄', '🌍', '🌞', '⭐', '🌙',
+                '🍎', '🍓', '🍇', '🍉', '🍌', '🥑', '🍒', '🥝',
+                '🐱', '🐶', '🐼', '🐨', '🦊', '🦁', '🐯', '🐻'
+            ];
+
+            // 启动应用
+            initApp();
+
+            function initApp() {
+                loadSavedData();
+                updateStickerCount();
+                setupEventListeners();
+                startLocationTracking();
+            }
+
+            function setupEventListeners() {
+                // 保存位置按钮
+                saveLocationBtn.addEventListener('click', saveCurrentLocation);
+
+                // 贴纸详情关闭按钮
+                closeStickerInfo.addEventListener('click', () => {
+                    stickerInfo.classList.remove('show');
+                });
+
+                // 标签切换
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const tabId = tab.getAttribute('data-tab');
+                        switchTab(tabId);
+                    });
+                });
+
+                // 阻止触摸事件默认行为（防止双击缩放）
+                document.addEventListener('touchstart', function(event) {
+                    if(event.touches.length > 1) {
+                        event.preventDefault();
+                    }
+                }, { passive: false });
+
+                // 防止缩放
+                document.addEventListener('gesturestart', function(e) {
+                    e.preventDefault();
+                });
+            }
+
+            function switchTab(tabId) {
+                // 更新激活标签
+                activeTab = tabId;
+
+                // 更新标签样式
+                tabs.forEach(tab => {
+                    if (tab.getAttribute('data-tab') === tabId) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+
+                // 更新内容显示
+                tabContents.forEach(content => {
+                    if (content.id === `tab-content-${tabId}`) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
+
+                // 如果切换到位置标签，刷新位置列表
+                if (tabId === 'locations') {
+                    renderSavedLocations();
+                } else if (tabId === 'stickers') {
+                    renderStickers();
+                }
+            }
+
+            function startLocationTracking() {
+                showLoading(true, '正在获取位置...');
+
+                // 检查地理位置API是否可用
+                if (!navigator.geolocation) {
+                    updateStatusText('您的浏览器不支持地理位置服务');
+                    showLoading(false);
+                    showStatusMessage('无法获取位置信息', true);
+                    return;
+                }
+
+                // 获取位置权限
+                const options = {
+                    enableHighAccuracy: true, // 使用高精度
+                    timeout: 10000,           // 超时时间
+                    maximumAge: 0             // 不使用缓存
+                };
+
+                try {
+                    // 持续监听位置
+                    locationWatchId = navigator.geolocation.watchPosition(
+                        positionUpdate,
+                        locationError,
+                        options
+                    );
+                } catch (error) {
+                    updateStatusText(`位置服务错误: ${error.message}`);
+                    showLoading(false);
+                    showStatusMessage('获取位置权限失败', true);
+                }
+            }
+
+            function positionUpdate(position) {
+                showLoading(false);
+
+                // 更新位置信息显示
+                const { latitude, longitude, accuracy } = position.coords;
+                latitudeElement.textContent = latitude.toFixed(6);
+                longitudeElement.textContent = longitude.toFixed(6);
+                accuracyElement.textContent = `${accuracy.toFixed(1)}米`;
+
+                // 更新精度指示器
+                updateAccuracyIndicator(accuracy);
+
+                // 保存当前位置
+                const newPosition = {
+                    latitude,
+                    longitude,
+                    accuracy,
+                    timestamp: position.timestamp
+                };
+
+                // 如果当前没有位置或位置变化较大，则重置计时器
+                if (!currentPosition || hasPositionChanged(currentPosition, newPosition)) {
+                    resetCollectionProgress();
+                    updateStatusText('检测到新位置，保持静止以收集贴纸');
+                } else {
+                    // 如果位置没有显著变化，开始或继续计时
+                    startCollectionTimer();
+                }
+
+                // 更新当前位置
+                currentPosition = newPosition;
+
+                // 启用保存位置按钮
+                saveLocationBtn.disabled = false;
+                saveLocationBtn.classList.remove('btn-disabled');
+            }
+
+            function locationError(error) {
+                showLoading(false);
+
+                let errorMessage = '';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = '位置权限被拒绝';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = '位置信息不可用';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = '获取位置超时';
+                        break;
+                    default:
+                        errorMessage = '位置服务错误';
+                }
+
+                updateStatusText(`错误: ${errorMessage}`);
+                showStatusMessage(errorMessage, true);
+            }
+
+            function hasPositionChanged(oldPos, newPos) {
+                // 计算两个位置之间的距离是否超过精度范围
+                // 简单判断：如果经纬度变化超过一定阈值则认为位置有变化
+                const latChange = Math.abs(oldPos.latitude - newPos.latitude);
+                const lngChange = Math.abs(oldPos.longitude - newPos.longitude);
+
+                // 根据精度动态调整阈值
+                const threshold = Math.max(5, newPos.accuracy) / 111000; // 粗略换算，1度约等于111公里
+
+                return latChange > threshold || lngChange > threshold;
+            }
+
+            function updateAccuracyIndicator(accuracy) {
+                let message = '';
+                let className = '';
+
+                if (accuracy <= 10) {
+                    message = '精度高 👍';
+                    className = 'high-accuracy';
+                } else if (accuracy <= 50) {
+                    message = '精度中等';
+                    className = 'medium-accuracy';
+                } else {
+                    message = '精度低，请尽量到户外开阔区域';
+                    className = 'low-accuracy';
+                }
+
+                accuracyMessageElement.textContent = message;
+                accuracyMessageElement.className = 'gps-accuracy ' + className;
+            }
+
+            function startCollectionTimer() {
+                if (isCollecting) return; // 已经在收集中
+
+                isCollecting = true;
+                collectCounter = 0;
+
+                updateStatusText('保持位置不变，正在收集贴纸...');
+
+                // 设置定时器，每秒更新一次进度
+                collectionTimer = setInterval(() => {
+                    collectCounter++;
+                    updateCollectionProgress(collectCounter);
+
+                    if (collectCounter >= 10) {
+                        // 收集完成，获得贴纸
+                        collectSticker();
+                        resetCollectionProgress();
+                    }
+                }, 1000);
+            }
+
+            function updateCollectionProgress(seconds) {
+                const percentage = (seconds / 10) * 100;
+                collectProgress.style.width = `${percentage}%`;
+            }
+
+            function resetCollectionProgress() {
+                // 清除现有计时器
+                if (collectionTimer) {
+                    clearInterval(collectionTimer);
+                }
+
+                // 重置状态
+                isCollecting = false;
+                collectCounter = 0;
+                collectProgress.style.width = '0%';
+            }
+
+            function collectSticker() {
+                // 从贴纸数组中随机选择一个
+                const randomEmoji = stickerEmojis[Math.floor(Math.random() * stickerEmojis.length)];
+
+                // 创建新贴纸对象
+                const newSticker = {
+                    id: generateUniqueId(),
+                    emoji: randomEmoji,
+                    collectedAt: new Date(),
+                    location: {
+                        latitude: currentPosition.latitude,
+                        longitude: currentPosition.longitude,
+                        accuracy: currentPosition.accuracy
+                    }
+                };
+
+                // 添加到收集列表
+                collectedStickers.push(newSticker);
+
+                // 保存数据
+                saveCollectedStickers();
+
+                // 更新UI
+                updateStickerCount();
+
+                // 显示收集成功消息
+                showStatusMessage(`获得新贴纸 ${randomEmoji}！`, false);
+
+                // 如果当前在贴纸标签页，刷新显示
+                if (activeTab === 'stickers') {
+                    renderStickers();
+                }
+
+                updateStatusText('成功收集到贴纸！保持位置继续收集更多');
+            }
+
+            function renderStickers() {
+                stickersContainer.innerHTML = '';
+
+                if (collectedStickers.length === 0) {
+                    stickersContainer.innerHTML = '<p>你还没有收集到任何贴纸，保持在同一位置10秒即可获得贴纸！</p>';
+                    return;
+                }
+
+                collectedStickers.forEach(sticker => {
+                    const stickerElement = document.createElement('div');
+                    stickerElement.className = 'sticker';
+                    stickerElement.textContent = sticker.emoji;
+
+                    // 点击查看贴纸详情
+                    stickerElement.addEventListener('click', () => {
+                        showStickerDetails(sticker);
+                    });
+
+                    stickersContainer.appendChild(stickerElement);
+                });
+            }
+
+            function showStickerDetails(sticker) {
+                const collectedAt = new Date(sticker.collectedAt);
+
+                stickerDetail.innerHTML = `
+                    <div class="sticker-detail-item">
+                        <span class="sticker-detail-label">贴纸：</span>
+                        <span class="sticker-detail-value">${sticker.emoji}</span>
+                    </div>
+                    <div class="sticker-detail-item">
+                        <span class="sticker-detail-label">收集时间：</span>
+                        <span class="sticker-detail-value">${formatDate(collectedAt)}</span>
+                    </div>
+                    <div class="sticker-detail-item">
+                        <span class="sticker-detail-label">位置：</span>
+                        <span class="sticker-detail-value">
+                            ${sticker.location.latitude.toFixed(6)}, 
+                            ${sticker.location.longitude.toFixed(6)}
+                        </span>
+                    </div>
+                    <div class="sticker-detail-item">
+                        <span class="sticker-detail-label">精度：</span>
+                        <span class="sticker-detail-value">${sticker.location.accuracy.toFixed(1)}米</span>
+                    </div>
+                `;
+
+                stickerInfo.classList.add('show');
+            }
+
+            function saveCurrentLocation() {
+                if (!currentPosition) {
+                    showStatusMessage('无法保存位置：未获取到位置数据', true);
+                    return;
+                }
+
+                const locationName = locationNameInput.value.trim();
+                if (!locationName) {
+                    showStatusMessage('请输入位置名称', true);
+                    locationNameInput.focus();
+                    return;
+                }
+
+                // 创建位置对象
+                const newLocation = {
+                    id: generateUniqueId(),
+                    name: locationName,
+                    latitude: currentPosition.latitude,
+                    longitude: currentPosition.longitude,
+                    accuracy: currentPosition.accuracy,
+                    savedAt: new Date()
+                };
+
+                // 添加到保存的位置列表
+                savedLocations.push(newLocation);
+
+                // 保存数据
+                saveSavedLocations();
+
+                // 清空输入框
+                locationNameInput.value = '';
+
+                // 显示成功消息
+                showStatusMessage('位置保存成功！', false);
+
+                // 如果当前在位置标签页，刷新显示
+                if (activeTab === 'locations') {
+                    renderSavedLocations();
+                }
+            }
+
+            function renderSavedLocations() {
+                savedLocationsContainer.innerHTML = '';
+
+                if (savedLocations.length === 0) {
+                    savedLocationsContainer.innerHTML = '<p>你还没有保存任何位置。</p>';
+                    return;
+                }
+
+                savedLocations.forEach(location => {
+                    const locationElement = document.createElement('div');
+                    locationElement.className = 'location-item';
+
+                    locationElement.innerHTML = `
+                        <div>
+                            <div class="location-name">${location.name}</div>
+                            <div class="location-coords">${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}</div>
+                        </div>
+                        <div class="location-actions">
+                            <button data-id="${location.id}" class="delete-location">🗑️</button>
+                        </div>
+                    `;
+
+                    // 添加删除按钮事件
+                    const deleteBtn = locationElement.querySelector('.delete-location');
+                    deleteBtn.addEventListener('click', () => {
+                        deleteLocation(location.id);
+                    });
+
+                    savedLocationsContainer.appendChild(locationElement);
+                });
+            }
+
+            function deleteLocation(locationId) {
+                // 从数组中移除指定ID的位置
+                savedLocations = savedLocations.filter(loc => loc.id !== locationId);
+
+                // 保存更新后的数据
+                saveSavedLocations();
+
+                // 重新渲染位置列表
+                renderSavedLocations();
+
+                // 显示成功消息
+                showStatusMessage('位置已删除', false);
+            }
+
+            function updateStickerCount() {
+                stickerCountElement.textContent = collectedStickers.length;
+            }
+
+            function updateStatusText(message) {
+                statusText.textContent = message;
+            }
+
+            function showStatusMessage(message, isError = false) {
+                statusMessage.textContent = message;
+                statusMessage.style.backgroundColor = isError ? 'rgba(220, 53, 69, 0.8)' : 'rgba(0, 0, 0, 0.7)';
+                statusMessage.classList.add('show');
+
+                // 自动隐藏
+                setTimeout(() => {
+                    statusMessage.classList.remove('show');
+                }, 3000);
+            }
+
+            function showLoading(show, message = '加载中...') {
+                if (show) {
+                    loadingOverlay.querySelector('.loading-text').textContent = message;
+                    loadingOverlay.classList.add('show');
+                } else {
+                    loadingOverlay.classList.remove('show');
+                }
+            }
+
+            // 数据存储和加载
+            function saveCollectedStickers() {
+                try {
+                    localStorage.setItem('collectedStickers', JSON.stringify(collectedStickers));
+                } catch (error) {
+                    console.error('保存贴纸数据失败:', error);
+                }
+            }
+
+            function saveSavedLocations() {
+                try {
+                    localStorage.setItem('savedLocations', JSON.stringify(savedLocations));
+                } catch (error) {
+                    console.error('保存位置数据失败:', error);
+                }
+            }
+
+            function loadSavedData() {
+                try {
+                    // 加载贴纸数据
+                    const stickersData = localStorage.getItem('collectedStickers');
+                    if (stickersData) {
+                        collectedStickers = JSON.parse(stickersData);
+                    }
+
+                    // 加载位置数据
+                    const locationsData = localStorage.getItem('savedLocations');
+                    if (locationsData) {
+                        savedLocations = JSON.parse(locationsData);
+                    }
+                } catch (error) {
+                    console.error('加载保存的数据失败:', error);
+                    collectedStickers = [];
+                    savedLocations = [];
+                }
+            }
+
+            // 辅助函数
+            function generateUniqueId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            }
+
+            function formatDate(date) {
+                return date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+        });
+    </script>
+</body>
+</html>
