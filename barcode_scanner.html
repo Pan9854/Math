@@ -897,19 +897,24 @@
                     return;
                 }
 
+                // 获取价格信息
+                const price = productPriceInput.value.trim() ? parseFloat(productPriceInput.value.trim()) : null;
+
                 // 更新或添加到历史记录
                 const existingIndex = scanHistory.findIndex(item => item.code === code);
 
                 if (existingIndex !== -1) {
                     // 更新现有记录
                     scanHistory[existingIndex].productName = name;
+                    scanHistory[existingIndex].price = price;
                 } else {
                     // 添加新记录
                     addToHistory({
                         code: code,
                         type: '未知',
                         timestamp: new Date(),
-                        productName: name
+                        productName: name,
+                        price: price
                     });
                 }
 
@@ -963,6 +968,7 @@
                         <div class="history-item-info">
                             <h4>${displayName}</h4>
                             <p>${item.code}</p>
+                            <p>${item.price ? `¥${item.price.toFixed(2)}` : "无价格"}</p>
                             <p>${formatTimestamp(new Date(item.timestamp))}</p>
                         </div>
                         <div class="history-actions">
