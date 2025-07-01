@@ -805,20 +805,20 @@
             }
 
             function collectSticker() {
-                let stickerEmoji;
-                
                 // 检查附近15米内是否有保存的位置
                 const nearbyLocation = findNearbyLocation(currentPosition, 15);
                 
-                if (nearbyLocation) {
-                    // 如果找到附近位置，使用该位置的贴纸
-                    stickerEmoji = nearbyLocation.sticker;
-                    showStatusMessage(`在附近找到"${nearbyLocation.name}"，获得其贴纸！`, false);
-                } else {
-                    // 如果没找到附近位置，按原有逻辑收集随机或选定的贴纸
-                    stickerEmoji = selectedSticker ? selectedSticker : stickerEmojis[Math.floor(Math.random() * stickerEmojis.length)];
+                if (!nearbyLocation) {
+                    // 如果没找到附近位置，显示消息并提前返回
+                    showStatusMessage(`需要靠近保存的位置才能获取贴纸！`, true);
+                    updateStatusText('请寻找已保存的位置');
+                    return;
                 }
-
+                
+                // 找到附近位置，继续收集贴纸
+                let stickerEmoji = nearbyLocation.sticker;
+                showStatusMessage(`在附近找到"${nearbyLocation.name}"，获得其贴纸！`, false);
+                
                 // 创建新贴纸对象
                 const newSticker = {
                     id: generateUniqueId(),
