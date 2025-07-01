@@ -864,12 +864,13 @@
                 resultType.textContent = '类型: ' + formatBarcodeType(type);
                 resultTime.textContent = '时间: ' + formatTimestamp(timestamp);
                 
+                // 清除之前的结果
+                while (latestScanResult.childElementCount > 4) {
+                    latestScanResult.removeChild(latestScanResult.lastChild);
+                }
+                
                 // 创建文档片段来显示所有匹配的记录
                 if (matchingItems.length > 0) {
-                    // 清除之前的结果
-                    while (latestScanResult.childElementCount > 4) {
-                        latestScanResult.removeChild(latestScanResult.lastChild);
-                    }
                     
                     // 创建匹配记录列表标题
                     //const matchesTitle = document.createElement('h4');
@@ -911,22 +912,20 @@
                     
                     latestScanResult.appendChild(matchesList);
                     
-                    // 使用最近一条记录的信息自动填充表单
-                    const mostRecent = matchingItems[0];
-                    if (mostRecent.productName) {
-                        productNameInput.value = mostRecent.productName;
+                    // 填充当前扫描的条形码对应的产品名称到表单
+                    // 从历史记录中找到当前条码的最后一次扫描记录
+                    const currentScanItem = matchingItems.find(item => item.code === code);
+                    if (currentScanItem) {
+                        productNameInput.value = currentScanItem.productName;
                     }
-                    if (mostRecent.price) {
-                        productPriceInput.value = mostRecent.price;
-                    }
-                    if (mostRecent.store) {
-                        productStoreInput.value = mostRecent.store;
-                    }
+                    else {
+                        productNameInput.value = ''; // 如果没有找到，清空产品名称输入框
+                    }   
                 }
                 
                 latestScanResult.style.display = 'block';
 
-                // 自动填充条码到表单
+                // 始终自动填充条码到表单
                 productCodeInput.value = code;
                 
                 // 播放提示音
@@ -1517,16 +1516,7 @@
                     latestScanResult.appendChild(matchesList);
                     
                     // 使用最近一条记录的信息自动填充表单
-                    const mostRecent = matchingItems[0];
-                    if (mostRecent.productName) {
-                        productNameInput.value = mostRecent.productName;
-                    }
-                    if (mostRecent.price) {
-                        productPriceInput.value = mostRecent.price;
-                    }
-                    if (mostRecent.store) {
-                        productStoreInput.value = mostRecent.store;
-                    }
+                   
                 }
                 
                 latestScanResult.style.display = 'block';
