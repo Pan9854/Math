@@ -550,10 +550,7 @@
                     <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none;">
                 </div>
                 <!-- 移除摄像头控制按钮 -->
-                <div class="camera-controls" style="display:none;">
-                    <button id="toggle-flash" class="control-button" style="display:none;">⚡</button>
-                    <button id="switch-camera" class="control-button" style="display:none;">⟲</button>
-                </div>
+            
             </div>
 
 
@@ -669,8 +666,8 @@
             const clearFormBtn = document.getElementById('clear-form');
             const historyList = document.getElementById('history-list');
             const clearHistoryBtn = document.getElementById('clear-history');
-            const toggleFlashBtn = document.getElementById('toggle-flash');
-            const switchCameraBtn = document.getElementById('switch-camera');
+            //const toggleFlashBtn = document.getElementById('toggle-flash');
+            //const switchCameraBtn = document.getElementById('switch-camera');
             const permissionPrompt = document.getElementById('permission-prompt');
             const requestPermissionBtn = document.getElementById('request-permission');
             const statusMessage = document.getElementById('status-message');
@@ -678,7 +675,7 @@
             const startScanBtn = document.getElementById('start-scan');
             const uploadPhotoBtn = document.getElementById('upload-photo');
             const photoInput = document.getElementById('photo-input');
-            const cameraControls = document.querySelector('.camera-controls');
+            //const cameraControls = document.querySelector('.camera-controls');
 
             // 变量
             let selectedDeviceId;
@@ -700,8 +697,8 @@
             quickSaveBtn.addEventListener('click', saveProduct);
             clearFormBtn.addEventListener('click', clearForm);
             clearHistoryBtn.addEventListener('click', clearHistory);
-            toggleFlashBtn.addEventListener('click', toggleFlash);
-            switchCameraBtn.addEventListener('click', switchCamera);
+            //toggleFlashBtn.addEventListener('click', toggleFlash);
+            //switchCameraBtn.addEventListener('click', switchCamera);
             requestPermissionBtn.addEventListener('click', requestCameraPermission);
             startScanBtn.addEventListener('click', toggleScanner);
             uploadPhotoBtn.addEventListener('click', triggerPhotoUpload);
@@ -754,7 +751,7 @@
 
                     // 显示相机视频元素和控制
                     video.style.display = 'block';
-                    cameraControls.style.display = 'flex';
+                    //cameraControls.style.display = 'flex';
                     
                     // 开始解码
                     await startDecoding();
@@ -787,7 +784,7 @@
                 
                 // 隐藏相机视频元素和控制
                 video.style.display = 'none';
-                cameraControls.style.display = 'none';
+                //cameraControls.style.display = 'none';
                 
                 // 释放摄像头资源
                 if (video.srcObject) {
@@ -1082,55 +1079,7 @@
                 }
             }
 
-            // 切换闪光灯
-            async function toggleFlash() {
-                if (!videoTrack || !('torch' in videoTrack.getConstraints())) {
-                    showMessage('此设备不支持闪光灯控制', true);
-                    return;
-                }
-
-                try {
-                    isFlashOn = !isFlashOn;
-                    await videoTrack.applyConstraints({advanced: [{torch: isFlashOn}]});
-                    toggleFlashBtn.textContent = isFlashOn ? '📴' : '⚡';
-                    showMessage(isFlashOn ? '闪光灯已开启' : '闪光灯已关闭');
-                } catch (error) {
-                    console.error('闪光灯控制失败:', error);
-                    showMessage('闪光灯控制失败', true);
-                    isFlashOn = false;
-                }
-            }
-
-            // 切换相机
-            async function switchCamera() {
-                if (availableDevices.length <= 1) {
-                    showMessage('没有可用的其他相机', true);
-                    return;
-                }
-
-                showLoader(true);
-
-                try {
-                    // 切换到下一个相机
-                    currentDeviceIndex = (currentDeviceIndex + 1) % availableDevices.length;
-                    selectedDeviceId = availableDevices[currentDeviceIndex].deviceId;
-
-                    // 重新初始化扫码器
-                    await startDecoding();
-
-                    // 重置闪光灯状态
-                    isFlashOn = false;
-                    toggleFlashBtn.textContent = '⚡';
-
-                    showMessage('已切换相机');
-                } catch (error) {
-                    console.error('切换相机失败:', error);
-                    showMessage('切换相机失败: ' + error.message, true);
-                } finally {
-                    showLoader(false);
-                }
-            }
-
+            
             // 请求相机权限
             async function requestCameraPermission() {
                 showLoader(true);
