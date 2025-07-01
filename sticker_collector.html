@@ -426,7 +426,10 @@
                         <label for="location-name">位置名称</label>
                         <input type="text" id="location-name" placeholder="给这个位置起个名字...">
                     </div>
-                    <button id="save-location-btn" class="btn btn-disabled" disabled>保存位置</button>
+                    <div style="display: flex; gap: 10px;">  
+                        <button id="save-location-btn" class="btn btn-disabled" disabled style="flex: 2;">保存位置</button>
+                        <button id="choose-sticker-btn" class="btn btn-disabled" disabled style="flex: 1;">选择贴纸</button>
+                    </div>
                 </div>
             </div>
 
@@ -510,6 +513,7 @@
             let savedLocations = [];
             let collectedStickers = [];
             let activeTab = 'collect';
+            let selectedSticker = null; // 选择的贴纸
 
             // 贴纸表情数组
             const stickerEmojis = [
@@ -534,6 +538,10 @@
             function setupEventListeners() {
                 // 保存位置按钮
                 saveLocationBtn.addEventListener('click', saveCurrentLocation);
+                
+                // 选择贴纸按钮
+                const chooseStickerBtn = document.getElementById('choose-sticker-btn');
+                chooseStickerBtn.addEventListener('click', showStickerSelector);
 
                 // 贴纸详情关闭按钮
                 closeStickerInfo.addEventListener('click', () => {
@@ -655,9 +663,13 @@
                 // 更新当前位置
                 currentPosition = newPosition;
 
-                // 启用保存位置按钮
+                // 启用保存位置按钮和选择贴纸按钮
                 saveLocationBtn.disabled = false;
                 saveLocationBtn.classList.remove('btn-disabled');
+                
+                const chooseStickerBtn = document.getElementById('choose-sticker-btn');
+                chooseStickerBtn.disabled = false;
+                chooseStickerBtn.classList.remove('btn-disabled');
             }
 
             function locationError(error) {
@@ -752,13 +764,13 @@
             }
 
             function collectSticker() {
-                // 从贴纸数组中随机选择一个
-                const randomEmoji = stickerEmojis[Math.floor(Math.random() * stickerEmojis.length)];
+                // 如果有选定的贴纸则使用它，否则随机选择一个
+                const stickerEmoji = selectedSticker ? selectedSticker : stickerEmojis[Math.floor(Math.random() * stickerEmojis.length)];
 
                 // 创建新贴纸对象
                 const newSticker = {
                     id: generateUniqueId(),
-                    emoji: randomEmoji,
+                    emoji: stickerEmoji,
                     collectedAt: new Date(),
                     location: {
                         latitude: currentPosition.latitude,
@@ -766,6 +778,9 @@
                         accuracy: currentPosition.accuracy
                     }
                 };
+                
+                // 收集完成后重置选定的贴纸
+                selectedSticker = null;
 
                 // 添加到收集列表
                 collectedStickers.push(newSticker);
@@ -1003,6 +1018,78 @@
                     minute: '2-digit',
                     second: '2-digit'
                 });
+            }
+            
+            // 显示贴纸选择器
+            function showStickerSelector() {
+                // 创建贴纸选择器对话框
+                const selectorContainer = document.createElement('div');
+                selectorContainer.style.position = 'fixed';
+                selectorContainer.style.top = '0';
+                selectorContainer.style.left = '0';
+                selectorContainer.style.width = '100%';
+                selectorContainer.style.height = '100%';
+                selectorContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                selectorContainer.style.zIndex = '1000';
+                selectorContainer.style.display = 'flex';
+                selectorContainer.style.flexDirection = 'column';
+                selectorContainer.style.justifyContent = 'center';
+                selectorContainer.style.alignItems = 'center';
+                selectorContainer.style.padding = '20px';
+                
+                // 创建标题
+                const title = document.createElement('h2');
+                title.textContent = '选择一个贴纸';
+                title.style.color = 'white';
+                title.style.marginBottom = '20px';
+                
+                // 创建贴纸网格
+                const stickerGrid = document.createElement('div');
+                stickerGrid.style.display = 'grid';
+                stickerGrid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+                stickerGrid.style.gap = '10px';
+                stickerGrid.style.maxHeight = '60vh';
+                stickerGrid.style.overflowY = 'auto';
+                stickerGrid.style.width = '100%';
+                stickerGrid.style.maxWidth = '400px';
+                stickerGrid.style.backgroundColor = 'white';
+                stickerGrid.style.borderRadius = '10px';
+                stickerGrid.style.padding = '15px';
+                
+                // 添加所有贴纸
+                stickerEmojis.forEach(emoji => {
+                    const stickerItem = document.createElement('div');
+                    stickerItem.className = 'sticker';
+                    stickerItem.textContent = emoji;
+                    stickerItem.style.cursor = 'pointer';
+                    
+                    stickerItem.addEventListener('click', () => {
+                        selectedSticker = emoji;
+                        document.body.removeChild(selectorContainer);
+                        showStatusMessage(`已选择贴纸: ${emoji}，停留10秒将获得此贴纸`, false);
+                    });
+                    
+                    stickerGrid.appendChild(stickerItem);
+                });
+                
+                // 创建取消按钮
+                const cancelBtn = document.createElement('button');
+                cancelBtn.textContent = '取消';
+                cancelBtn.className = 'btn';
+                cancelBtn.style.marginTop = '20px';
+                cancelBtn.style.width = '200px';
+                
+                cancelBtn.addEventListener('click', () => {
+                    document.body.removeChild(selectorContainer);
+                });
+                
+                // 组装对话框
+                selectorContainer.appendChild(title);
+                selectorContainer.appendChild(stickerGrid);
+                selectorContainer.appendChild(cancelBtn);
+                
+                // 添加到页面
+                document.body.appendChild(selectorContainer);
             }
         });
     </script>
