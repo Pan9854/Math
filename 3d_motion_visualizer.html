@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D动作可视化</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 70vh;
+            position: relative;
+            overflow: hidden;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 50px;
+            background-color: #2196F3;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 0 1 120px;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #start-btn {
+            background-color: #4CAF50;
+        }
+
+        #reset-btn {
+            background-color: #F44336;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #333;
+            text-align: center;
+            height: 20px;
+        }
+
+        .progress-container {
+            width: 80%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 10px auto;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #2196F3;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .instructions {
+            padding: 15px;
+            color: #555;
+            font-size: 14px;
+            text-align: center;
+            max-width: 80%;
+            margin: 10px auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container">
+            <canvas id="canvas3d"></canvas>
+        </div>
+
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div id="status">准备就绪</div>
+
+        <div class="instructions">
+            按下"开始"后，移动设备5秒钟，系统会根据动作生成3D图形
+        </div>
+
+        <div id="controls">
+            <button id="start-btn">开始</button>
+            <button id="reset-btn" disabled>重置</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script>
+        // 主要应用对象
+        const app = {
+            isRecording: false,
+            recordingTime: 5000, // 记录5秒
+            recordStartTime: 0,
+            motionData: [],
+            scene: null,
+            camera: null,
+            renderer: null,
+            geometry: null,
+            material: null,
+            mesh: null,
+
+            // DOM元素
+            startBtn: document.getElementById('start-btn'),
+            resetBtn: document.getElementById('reset-btn'),
+            statusText: document.getElementById('status'),
+            progressContainer: document.getElementById('progress-container'),
+            progressBar: document.getElementById('progress-bar'),
+            canvas: document.getElementById('canvas3d'),
+
+            init() {
+                // 初始化事件监听器
+                this.startBtn.addEventListener('click', () => this.startRecording());
+                this.resetBtn.addEventListener('click', () => this.resetVisualization());
+
+                // 初始化3D场景
+                this.initThreeJS();
+
+                // 检查设备运动API支持
+                if (window.DeviceOrientationEvent && window.DeviceMotionEvent) {
+                    this.statusText.textContent = '准备就绪，点击开始按钮';
+                } else {
+                    this.statusText.textContent = '您的设备不支持方向或运动传感器';
+                    this.startBtn.disabled = true;
+                }
+
+                // 请求设备动作权限（iOS 13+需要）
+                this.requestMotionPermission();
+            },
+
+            async requestMotionPermission() {
+                if (typeof DeviceOrientationEvent !== 'undefined' && 
+                    typeof DeviceOrientationEvent.requestPermission === 'function') {
+
+                    this.startBtn.addEventListener('click', async () => {
+                        try {
+                            const permissionState = await DeviceOrientationEvent.requestPermission();
+                            if (permissionState === 'granted') {
+                                // 权限已获取，可以继续
+                                this.startRecording();
+                            } else {
+                                this.statusText.textContent = '需要运动传感器权限';
+                            }
+                        } catch (error) {
+                            console.error('权限请求错误:', error);
+                            this.statusText.textContent = '无法获取传感器权限';
+                        }
+                    }, { once: true });
+                }
+            },
+
+            startRecording() {
+                this.isRecording = true;
+                this.motionData = [];
+                this.recordStartTime = Date.now();
+
+                // 更新UI
+                this.startBtn.disabled = true;
+                this.resetBtn.disabled = true;
+                this.statusText.textContent = '记录中...';
+                this.progressContainer.style.display = 'block';
+
+                // 添加传感器事件监听器
+                window.addEventListener('deviceorientation', this.handleOrientation);
+                window.addEventListener('devicemotion', this.handleMotion);
+
+                // 设置进度条更新
+                this.updateProgress();
+
+                // 设置计时器结束记录
+                setTimeout(() => {
+                    this.stopRecording();
+                }, this.recordingTime);
+            },
+
+            stopRecording() {
+                this.isRecording = false;
+
+                // 移除事件监听器
+                window.removeEventListener('deviceorientation', this.handleOrientation);
+                window.removeEventListener('devicemotion', this.handleMotion);
+
+                // 更新UI
+                this.statusText.textContent = '生成3D图形...';
+                this.progressContainer.style.display = 'none';
+                this.resetBtn.disabled = false;
+
+                // 生成3D图形
+                setTimeout(() => {
+                    this.generateVisualization();
+                    this.statusText.textContent = '完成!';
+                }, 500);
+            },
+
+            resetVisualization() {
+                // 重置数据
+                this.motionData = [];
+
+                // 清除当前图形
+                if (this.mesh) {
+                    this.scene.remove(this.mesh);
+                    this.mesh = null;
+                }
+
+                // 重置基本图形
+                this.addBasicShape();
+
+                // 更新UI
+                this.startBtn.disabled = false;
+                this.resetBtn.disabled = true;
+                this.statusText.textContent = '准备就绪，点击开始按钮';
+                this.progressContainer.style.display = 'none';
+                this.progressBar.style.width = '0%';
+            },
+
+            handleOrientation(event) {
+                if (!app.isRecording) return;
+
+                const { alpha, beta, gamma } = event;
+                app.motionData.push({
+                    type: 'orientation',
+                    alpha: alpha || 0,
+                    beta: beta || 0,
+                    gamma: gamma || 0,
+                    timestamp: Date.now() - app.recordStartTime
+                });
+            },
+
+            handleMotion(event) {
+                if (!app.isRecording) return;
+
+                const { acceleration, rotationRate, interval } = event;
+
+                if (acceleration) {
+                    app.motionData.push({
+                        type: 'acceleration',
+                        x: acceleration.x || 0,
+                        y: acceleration.y || 0,
+                        z: acceleration.z || 0,
+                        timestamp: Date.now() - app.recordStartTime
+                    });
+                }
+
+                if (rotationRate) {
+                    app.motionData.push({
+                        type: 'rotation',
+                        alpha: rotationRate.alpha || 0,
+                        beta: rotationRate.beta || 0,
+                        gamma: rotationRate.gamma || 0,
+                        timestamp: Date.now() - app.recordStartTime
+                    });
+                }
+            },
+
+            updateProgress() {
+                const updateInterval = 50; // 更新频率 (ms)
+
+                const progressUpdate = () => {
+                    if (!this.isRecording) return;
+
+                    const elapsed = Date.now() - this.recordStartTime;
+                    const progress = Math.min(100, (elapsed / this.recordingTime) * 100);
+
+                    this.progressBar.style.width = progress + '%';
+
+                    if (elapsed < this.recordingTime) {
+                        setTimeout(progressUpdate, updateInterval);
+                    }
+                };
+
+                progressUpdate();
+            },
+
+            initThreeJS() {
+                // 创建场景
+                this.scene = new THREE.Scene();
+
+                // 设置相机
+                const width = this.canvas.clientWidth;
+                const height = this.canvas.clientHeight;
+                this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+                this.camera.position.z = 5;
+
+                // 创建渲染器
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: true,
+                    alpha: true
+                });
+                this.renderer.setSize(width, height);
+
+                // 添加灯光
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                this.scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(1, 1, 1);
+                this.scene.add(directionalLight);
+
+                // 添加基础形状
+                this.addBasicShape();
+
+                // 设置动画循环
+                this.animate();
+
+                // 响应窗口大小变化
+                window.addEventListener('resize', () => {
+                    const width = this.canvas.clientWidth;
+                    const height = this.canvas.clientHeight;
+
+                    this.camera.aspect = width / height;
+                    this.camera.updateProjectionMatrix();
+
+                    this.renderer.setSize(width, height);
+                });
+            },
+
+            addBasicShape() {
+                // 创建一个基础几何体
+                this.geometry = new THREE.SphereGeometry(1, 32, 32);
+                this.material = new THREE.MeshPhongMaterial({
+                    color: 0x2196F3,
+                    shininess: 100,
+                    flatShading: false
+                });
+
+                this.mesh = new THREE.Mesh(this.geometry, this.material);
+                this.scene.add(this.mesh);
+            },
+
+            generateVisualization() {
+                // 如果没有数据，不处理
+                if (this.motionData.length === 0) {
+                    return;
+                }
+
+                // 移除旧的几何体
+                if (this.mesh) {
+                    this.scene.remove(this.mesh);
+                }
+
+                // 基于收集的数据创建一个复杂的几何体
+                const geometry = new THREE.BufferGeometry();
+                const vertices = [];
+                const colors = [];
+
+                // 传感器数据分类和预处理
+                const accelerationData = this.motionData.filter(d => d.type === 'acceleration');
+                const orientationData = this.motionData.filter(d => d.type === 'orientation');
+                const rotationData = this.motionData.filter(d => d.type === 'rotation');
+                
+                // 运动数据预处理
+                // 平滑加速度数据以减少噪声
+                const smoothedAcceleration = this.smoothMotionData(accelerationData, 3);
+                
+                // 检测峰值和显著变化
+                const accelerationPeaks = this.detectPeaks(smoothedAcceleration, 'z', 2.0);
+                
+                // 计算运动的持续时间和强度
+                const motionIntensity = this.calculateMotionIntensity(accelerationData);
+                const motionDuration = accelerationData.length > 0 ? 
+                    accelerationData[accelerationData.length-1].timestamp - accelerationData[0].timestamp : 
+                    this.recordingTime;
+                
+                // 确定形态变化的主导因素
+                const dominantAxis = this.findDominantAxis(smoothedAcceleration);
+                const rotationAmplitude = this.calculateRotationAmplitude(rotationData);
+                // 根据采集到的数据创建形状
+                // 这里使用一种算法将运动数据转换成3D形状
+                // 使用加速度数据创建点云
+                if (accelerationData.length > 0) {
+                    // 动态调整缩放因子，基于运动强度
+                    const scaleAccel = 0.2 * (1.0 + motionIntensity * 0.5);
+                    
+                    // 添加形态变化因素
+                    const waveFrequency = 3.0 + rotationAmplitude * 5.0;
+                    const waveAmplitude = 0.2 + motionIntensity * 0.3;
+
+                    for (let i = 0; i < accelerationData.length; i += 1) {
+                        const data = accelerationData[i];
+                        const t = data.timestamp / this.recordingTime; // 0到1的时间归一化
+
+                        // 使用加速度创建点
+                        vertices.push(data.x * scaleAccel, data.y * scaleAccel, data.z * scaleAccel);
+
+                        // 时间梯度颜色
+                        colors.push(t, 0.4 + t * 0.6, 1.0 - t * 0.5);
+                    }
+                }
+
+                // 使用方向数据创建补充形状
+                if (orientationData.length > 0) {
+                    // 根据方向数据创建一组顶点
+                    const radius = 1.5;
+                    const segments = Math.min(32, orientationData.length);
+
+                    for (let i = 0; i < segments; i++) {
+                        const data = orientationData[Math.floor(i * orientationData.length / segments)];
+                        const t = i / segments;
+
+                        // 使用方向角度创建点
+                        const theta = (data.alpha / 180) * Math.PI;
+                        const phi = (data.beta / 180) * Math.PI;
+
+                        const x = radius * Math.sin(phi) * Math.cos(theta);
+                        const y = radius * Math.cos(phi);
+                        const z = radius * Math.sin(phi) * Math.sin(theta);
+
+                        vertices.push(x, y, z);
+
+                        // 颜色
+                        colors.push(0.8 - t * 0.5, t * 0.8, 0.2 + t * 0.5);
+                    }
+                }
+
+                // 如果数据不够，添加一些随机点增加复杂度
+                if (vertices.length < 90) {
+                    const additionalPoints = 30;
+                    for (let i = 0; i < additionalPoints; i++) {
+                        const t = i / additionalPoints;
+                        const radius = 0.8 + Math.random() * 0.6;
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = Math.random() * Math.PI;
+
+                        const x = radius * Math.sin(phi) * Math.cos(theta);
+                        const y = radius * Math.cos(phi);
+                        const z = radius * Math.sin(phi) * Math.sin(theta);
+
+                        vertices.push(x, y, z);
+                        colors.push(Math.random(), Math.random(), Math.random());
+                    }
+                }
+
+                // 创建最终的3D对象
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+                // 使用点云或球体可视化
+                if (vertices.length > 100) {
+                    // 较多数据点使用点云
+                    const material = new THREE.PointsMaterial({
+                        size: 0.08,
+                        vertexColors: true,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    this.mesh = new THREE.Points(geometry, material);
+                } else {
+                    // 较少数据点，创建一个有趣的几何体
+                    try {
+                        // 首先检查THREE.ConvexGeometry是否可用
+                        if (typeof THREE.ConvexGeometry === 'function') {
+                            // 尝试创建凸包
+                            const points = Array.from({length: vertices.length/3}, (_, i) => 
+                                new THREE.Vector3(vertices[i*3], vertices[i*3+1], vertices[i*3+2])
+                            );
+                            
+                            // 确保点数足够创建凸包
+                            if (points.length >= 4) {
+                                const convexGeometry = new THREE.ConvexGeometry(points);
+                                
+                                // 创建渐变色材质
+                                const colors = this.generateGradientColors();
+                                const material = new THREE.MeshPhongMaterial({
+                                    color: colors.primary,
+                                    opacity: 0.8,
+                                    transparent: true,
+                                    flatShading: true,
+                                    side: THREE.DoubleSide, // 双面渲染
+                                    specular: colors.specular,
+                                    shininess: 30,
+                                    emissive: colors.emissive,
+                                    emissiveIntensity: 0.2
+                                });
+                                
+                                this.mesh = new THREE.Mesh(convexGeometry, material);
+                            } else {
+                                this.createAlternativeGeometry(geometry, vertices);
+                            }
+                        } else {
+                            // 如果ConvexGeometry不可用，使用备用方法
+                            this.createAlternativeGeometry(geometry, vertices);
+                        }
+                    } catch (e) {
+                        console.warn("凸包几何体创建失败:", e);
+                        // 如果凸包创建失败，使用备用几何体
+                        this.createAlternativeGeometry(geometry, vertices);
+                    }
+                }
+
+                // 添加到场景
+                this.scene.add(this.mesh);
+            },
+            
+            createAlternativeGeometry(geometry, vertices) {
+                // 创建一个基于顶点的替代几何体
+                const size = Math.max(0.8, Math.min(2.0, vertices.length / 50));
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x3399ff,
+                    opacity: 0.8,
+                    transparent: true,
+                    flatShading: true,
+                    side: THREE.DoubleSide
+                });
+                
+                // 创建一个变形的球体几何体
+                const sphereGeo = new THREE.SphereGeometry(size, 16, 16);
+                
+                // 扭曲球体的顶点，基于提供的顶点
+                const posAttr = sphereGeo.attributes.position;
+                for (let i = 0; i < posAttr.count; i++) {
+                    const idx = Math.floor(Math.random() * (vertices.length / 3)) * 3;
+                    if (idx < vertices.length - 2) {
+                        const factor = 0.25 + Math.random() * 0.25;
+                        posAttr.setXYZ(
+                            i,
+                            posAttr.getX(i) + vertices[idx] * factor,
+                            posAttr.getY(i) + vertices[idx+1] * factor,
+                            posAttr.getZ(i) + vertices[idx+2] * factor
+                        );
+                    }
+                }
+                
+                this.mesh = new THREE.Mesh(sphereGeo, material);
+            },
+            
+            smoothMotionData(data, windowSize = 5) {
+                if (!data || data.length <= windowSize) {
+                    return data;
+                }
+                
+                const smoothed = [];
+                
+                // 为每个数据点应用移动平均平滑
+                for (let i = 0; i < data.length; i++) {
+                    const window = [];
+                    const start = Math.max(0, i - Math.floor(windowSize / 2));
+                    const end = Math.min(data.length - 1, i + Math.floor(windowSize / 2));
+                    
+                    for (let j = start; j <= end; j++) {
+                        window.push(data[j]);
+                    }
+                    
+                    // 计算平均值
+                    const avgPoint = {...data[i]};
+                    if (avgPoint.x !== undefined) {
+                        avgPoint.x = window.reduce((sum, point) => sum + point.x, 0) / window.length;
+                        avgPoint.y = window.reduce((sum, point) => sum + point.y, 0) / window.length;
+                        avgPoint.z = window.reduce((sum, point) => sum + point.z, 0) / window.length;
+                    } else if (avgPoint.alpha !== undefined) {
+                        avgPoint.alpha = window.reduce((sum, point) => sum + point.alpha, 0) / window.length;
+                        avgPoint.beta = window.reduce((sum, point) => sum + point.beta, 0) / window.length;
+                        avgPoint.gamma = window.reduce((sum, point) => sum + point.gamma, 0) / window.length;
+                    }
+                    
+                    smoothed.push(avgPoint);
+                }
+                
+                return smoothed;
+            },
+            
+            detectPeaks(data, axis, threshold = 1.5) {
+                if (!data || data.length === 0) {
+                    return [];
+                }
+                
+                const peaks = [];
+                let prevValue = data[0][axis];
+                let increasing = false;
+                
+                for (let i = 1; i < data.length; i++) {
+                    const currentValue = data[i][axis];
+                    
+                    // 检测方向变化
+                    if (currentValue > prevValue) {
+                        increasing = true;
+                    } else if (currentValue < prevValue && increasing) {
+                        // 下降趋势开始，检查前一个点是否是峰值
+                        if (Math.abs(prevValue) > threshold) {
+                            peaks.push({
+                                index: i-1,
+                                value: prevValue,
+                                timestamp: data[i-1].timestamp
+                            });
+                        }
+                        increasing = false;
+                    }
+                    
+                    prevValue = currentValue;
+                }
+                
+                return peaks;
+            },
+            
+            calculateMotionIntensity(accelerationData) {
+                if (!accelerationData || accelerationData.length === 0) {
+                    return 0;
+                }
+                
+                // 计算加速度平方和的平均值
+                let sumSquares = 0;
+                for (const data of accelerationData) {
+                    const magnitudeSquared = data.x * data.x + data.y * data.y + data.z * data.z;
+                    sumSquares += magnitudeSquared;
+                }
+                
+                const avgIntensity = Math.sqrt(sumSquares / accelerationData.length);
+                // 归一化到0-1范围，假设最大可能强度为20
+                return Math.min(1.0, avgIntensity / 20);
+            },
+            
+            findDominantAxis(accelerationData) {
+                if (!accelerationData || accelerationData.length === 0) {
+                    return 'none';
+                }
+                
+                // 计算每个轴的变化总和
+                let sumX = 0, sumY = 0, sumZ = 0;
+                
+                for (let i = 1; i < accelerationData.length; i++) {
+                    sumX += Math.abs(accelerationData[i].x - accelerationData[i-1].x);
+                    sumY += Math.abs(accelerationData[i].y - accelerationData[i-1].y);
+                    sumZ += Math.abs(accelerationData[i].z - accelerationData[i-1].z);
+                }
+                
+                // 确定主导轴
+                if (sumX > sumY && sumX > sumZ) {
+                    return 'x';
+                } else if (sumY > sumX && sumY > sumZ) {
+                    return 'y';
+                } else {
+                    return 'z';
+                }
+            },
+            
+            calculateRotationAmplitude(rotationData) {
+                if (!rotationData || rotationData.length === 0) {
+                    return 0;
+                }
+                
+                // 找出每个轴的最大变化
+                let maxAlpha = 0, maxBeta = 0, maxGamma = 0;
+                
+                for (let i = 1; i < rotationData.length; i++) {
+                    const deltaAlpha = Math.abs(rotationData[i].alpha - rotationData[i-1].alpha);
+                    const deltaBeta = Math.abs(rotationData[i].beta - rotationData[i-1].beta);
+                    const deltaGamma = Math.abs(rotationData[i].gamma - rotationData[i-1].gamma);
+                    
+                    maxAlpha = Math.max(maxAlpha, deltaAlpha);
+                    maxBeta = Math.max(maxBeta, deltaBeta);
+                    maxGamma = Math.max(maxGamma, deltaGamma);
+                }
+                
+                // 取最大旋转变化作为振幅指标
+                const maxRotation = Math.max(maxAlpha, maxBeta, maxGamma);
+                
+                // 归一化到0-1范围，假设最大旋转速度为360度/秒
+                return Math.min(1.0, maxRotation / 360);
+            },
+
+            animate() {
+                requestAnimationFrame(() => app.animate());
+
+                // 旋转物体
+                if (app.mesh) {
+                    app.mesh.rotation.y += 0.005;
+                    app.mesh.rotation.z += 0.002;
+                }
+
+                app.renderer.render(app.scene, app.camera);
+            }
+        };
+
+        // 页面加载由外部脚本处理
+    </script>
+
+    <!-- 条件加载 ConvexGeometry 用于复杂形状生成 -->
+    <script>
+        // 检查ConvexGeometry依赖
+        function loadConvexGeometryDependencies() {
+            return new Promise((resolve, reject) => {
+                // 先加载ConvexHull (ConvexGeometry的依赖)
+                const convexHullScript = document.createElement('script');
+                convexHullScript.src = "https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/math/ConvexHull.js";
+                convexHullScript.onload = () => {
+                    // 然后加载ConvexGeometry
+                    const convexGeometryScript = document.createElement('script');
+                    convexGeometryScript.src = "https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/geometries/ConvexGeometry.js";
+                    convexGeometryScript.onload = () => resolve();
+                    convexGeometryScript.onerror = () => {
+                        console.warn("ConvexGeometry加载失败，将使用备用几何体");
+                        resolve(); // 即使失败也解析Promise
+                    };
+                    document.head.appendChild(convexGeometryScript);
+                };
+                convexHullScript.onerror = () => {
+                    console.warn("ConvexHull加载失败，将使用备用几何体");
+                    resolve(); // 即使失败也解析Promise
+                };
+                document.head.appendChild(convexHullScript);
+            });
+        }
+        
+        // 页面加载时尝试加载依赖
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await loadConvexGeometryDependencies();
+                console.log("3D几何体依赖加载完成");
+            } catch(e) {
+                console.warn("加载3D几何体依赖时出错:", e);
+            }
+            // 初始化应用
+            app.init();
+        });
+    </script>
+</body>
+</html>
