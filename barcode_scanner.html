@@ -66,7 +66,7 @@
         .scanner-container {
             position: relative;
             width: 100%;
-            height: 40vh;
+            height: 30vh; /* 缩小扫码区域高度 */
             overflow: hidden;
             background-color: #000;
         }
@@ -252,7 +252,7 @@
             position: sticky;
             top: 0;
             z-index: 50;
-            flex: 1.5;
+            flex: 2; /* 增加输入区域的比例 */
         }
 
         .form-group {
@@ -320,6 +320,8 @@
             padding: 15px;
             background-color: var(--card-bg);
             border-top: 1px solid #2a2a2a;
+            max-height: 25vh; /* 限制历史记录区域最大高度 */
+            overflow-y: auto;
         }
 
         .history-header {
@@ -330,7 +332,7 @@
         }
 
         .history-list {
-            max-height: 20vh;
+            max-height: 15vh; /* 缩小历史记录列表的最大高度 */
             overflow-y: auto;
         }
 
@@ -514,13 +516,13 @@
         /* 响应式调整 */
         @media (max-height: 600px) {
             .scanner-container {
-                height: 35vh;
+                height: 25vh;
             }
         }
 
         @media (max-height: 500px) {
             .scanner-container {
-                height: 30vh;
+                height: 20vh;
             }
         }
     </style>
@@ -552,9 +554,7 @@
                     <button id="switch-camera" class="control-button">⟲</button>
                 </div>
             </div>
-            <div style="text-align: center; padding: 15px; background-color: var(--card-bg);">
-                <button id="upload-photo" class="btn btn-secondary scan-btn" style="width: 80%; max-width: 250px;">上传照片</button>
-            </div>
+
 
             <!-- 结果和输入区域 -->
             <div class="results-container">
@@ -589,6 +589,9 @@
                                 }
                             </style>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <button id="upload-photo" class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;">上传照片</button>
                     </div>
                     <div class="action-buttons">
                         <button id="save-product" class="btn btn-primary">保存</button>
