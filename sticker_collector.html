@@ -427,8 +427,8 @@
                         <input type="text" id="location-name" placeholder="给这个位置起个名字...">
                     </div>
                     <div style="display: flex; gap: 10px;">  
-                        <button id="save-location-btn" class="btn btn-disabled" disabled style="flex: 2;">保存位置</button>
                         <button id="choose-sticker-btn" class="btn btn-disabled" disabled style="flex: 1;">选择贴纸</button>
+                        <button id="save-location-btn" class="btn btn-disabled" disabled style="flex: 2;">保存位置</button>
                     </div>
                 </div>
             </div>
@@ -792,7 +792,10 @@
                 updateStickerCount();
 
                 // 显示收集成功消息
-                showStatusMessage(`获得新贴纸 ${randomEmoji}！`, false);
+                showStatusMessage(`获得新贴纸 ${stickerEmoji}！`, false);
+                
+                // 在屏幕中显示贴纸
+                showCollectedStickerAnimation(stickerEmoji);
 
                 // 如果当前在贴纸标签页，刷新显示
                 if (activeTab === 'stickers') {
@@ -865,6 +868,9 @@
                     return;
                 }
 
+                // 使用选定的贴纸或随机选择一个贴纸
+                const locationSticker = selectedSticker ? selectedSticker : stickerEmojis[Math.floor(Math.random() * stickerEmojis.length)];
+                
                 // 创建位置对象
                 const newLocation = {
                     id: generateUniqueId(),
@@ -872,7 +878,8 @@
                     latitude: currentPosition.latitude,
                     longitude: currentPosition.longitude,
                     accuracy: currentPosition.accuracy,
-                    savedAt: new Date()
+                    savedAt: new Date(),
+                    sticker: locationSticker // 保存该位置的指定贴纸
                 };
 
                 // 添加到保存的位置列表
@@ -883,6 +890,9 @@
 
                 // 清空输入框
                 locationNameInput.value = '';
+                
+                // 收集完成后重置选定的贴纸
+                selectedSticker = null;
 
                 // 显示成功消息
                 showStatusMessage('位置保存成功！', false);
@@ -907,7 +917,7 @@
 
                     locationElement.innerHTML = `
                         <div>
-                            <div class="location-name">${location.name}</div>
+                            <div class="location-name">${location.name} ${location.sticker || ""}</div>
                             <div class="location-coords">${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}</div>
                         </div>
                         <div class="location-actions">
@@ -986,12 +996,10 @@
 
             function loadSavedData() {
                 try {
-                    // 加载贴纸数据
-                    const stickersData = localStorage.getItem('collectedStickers');
-                    if (stickersData) {
-                        collectedStickers = JSON.parse(stickersData);
-                    }
-
+                    // 网页加载时清空贴纸记录
+                    collectedStickers = [];
+                    localStorage.removeItem('collectedStickers');
+                    
                     // 加载位置数据
                     const locationsData = localStorage.getItem('savedLocations');
                     if (locationsData) {
@@ -1018,6 +1026,37 @@
                     minute: '2-digit',
                     second: '2-digit'
                 });
+            }
+            
+            // 显示获得贴纸的动画
+            function showCollectedStickerAnimation(emoji) {
+                const animDiv = document.createElement('div');
+                animDiv.style.position = 'fixed';
+                animDiv.style.top = '40%';
+                animDiv.style.left = '50%';
+                animDiv.style.transform = 'translate(-50%, -50%)';
+                animDiv.style.fontSize = '8rem';
+                animDiv.style.zIndex = '1000';
+                animDiv.textContent = emoji;
+                animDiv.style.transition = 'all 1s ease-in-out';
+                animDiv.style.opacity = '0';
+                animDiv.style.transform = 'translate(-50%, -50%) scale(0.5)';
+                
+                document.body.appendChild(animDiv);
+                
+                setTimeout(() => {
+                    animDiv.style.opacity = '1';
+                    animDiv.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                }, 100);
+                
+                setTimeout(() => {
+                    animDiv.style.opacity = '0';
+                    animDiv.style.transform = 'translate(-50%, -50%) scale(0.5)';
+                }, 2000);
+                
+                setTimeout(() => {
+                    document.body.removeChild(animDiv);
+                }, 3000);
             }
             
             // 显示贴纸选择器
