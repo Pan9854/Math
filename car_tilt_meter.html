@@ -558,8 +558,14 @@ function handleOrientation(event) {
             const dotProduct = nz;
             // 确保点积在[-1,1]范围内，避免数值计算误差
             const clampedDot = Math.max(-1, Math.min(1, dotProduct));
-            const angle = Math.acos(clampedDot) * 180 / Math.PI;
-
+            let angle = Math.acos(clampedDot) * 180 / Math.PI;
+            
+            // 根据ny的符号判断是上坡还是下坡
+            // ny < 0 表示手机顶部向下倾斜（下坡），此时返回负值
+            if (ny < 0) {
+                angle = -angle;
+            }
+            
             return angle;
         }
 
@@ -571,7 +577,7 @@ function updateClockHand(screenAngle) {
     clockHand.style.transform = `rotate(${rotationAngle}deg)`;
 
     // 根据倾斜角度改变指针颜色
-    const normalizedAngle = Math.min(Math.abs(screenAngle) / 90, 1); // 归一化到[0,1]区间
+    const normalizedAngle = Math.min(Math.abs(screenAngle) / 180, 1); // 归一化到[0,1]区间，范围扩大到180度
 
     // 颜色根据上下坡不同：上坡(蓝绿)，下坡(红色)
     let red, green, blue;
