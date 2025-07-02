@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>车载坡度测量器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .angle-display {
+            position: relative;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 12px 20px;
+            border-radius: 20px;
+            z-index: 100;
+            animation: pulse 2s infinite ease-in-out;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px;
+            width: 45%;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.9; }
+            50% { opacity: 1; }
+            100% { opacity: 0.9; }
+        }
+
+        .clock-container {
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            width: 280px;
+            height: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .clock {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .clock-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+
+        .clock-hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            width: 4px;
+            height: 40%;
+            background: linear-gradient(to top, rgba(0, 255, 0, 0.9), rgba(0, 255, 0, 0.5));
+            transform-origin: 50% 100%;
+            transition: transform 0.2s, background 0.3s;
+            border-radius: 50% 50% 0 0;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+        }
+
+        .clock-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            background-color: #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+        }
+
+        .clock-markers {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .clock-marker {
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            left: 50%;
+            top: 10px;
+            transform-origin: 50% calc(125px - 10px);
+        }
+
+        .clock-marker.major {
+            width: 3px;
+            height: 15px;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .level-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 3px;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            transform: translateX(-50%);
+        }
+
+        .permission-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        .permission-button:hover {
+            background-color: #45a049;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .calibrate-button {
+            position: absolute;
+            top: 40%;
+            right: 10px;
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .calibrate-button:hover {
+            background-color: #0b7dda;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .speed-display {
+            position: relative;
+            font-size: 1.5rem;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 10px 15px;
+            border-radius: 15px;
+            z-index: 100;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            margin: 10px;
+            width: 45%;
+        }
+
+        .permission-button.no-support {
+            background-color: #f44336;
+            cursor: not-allowed;
+        }
+
+        .horizontal-line {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 2px;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .debug-info {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 5px;
+        }
+
+        .level-perfect {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            color: #4CAF50;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .height-display {
+            font-size: 1.3rem;
+            margin-top: 8px;
+            color: #64B5F6;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .displays-container {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            width: 90%;
+            z-index: 100;
+        }
+    </style>
+    <style>
+    .angle-uphill {
+        color: #4CAF50; /* 绿色，表示上坡 */
+    }
+
+    .angle-downhill {
+        color: #F44336; /* 红色，表示下坡 */
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="permissionButton" class="permission-button">点击开始测量倾斜度</button>
+        <button id="calibrateButton" class="calibrate-button" style="display:none;">校准</button>
+        
+        <div class="displays-container">
+            <div id="angleDisplay" class="angle-display">
+                <div><span id="angleValue">0.0°</span></div>
+                <div id="heightDisplay" class="height-display">垂直高度: 0.00</div>
+            </div>
+            <div id="speedDisplay" class="speed-display" style="display:none;">速度: <span id="speedValue">0.0</span> km/h</div>
+        </div>
+
+        <div class="clock-container">
+            <div class="clock">
+                <div class="clock-face">
+                    <div class="clock-markers" id="clockMarkers"></div>
+                    <div class="level-indicator"></div>
+                    <div id="clockHand" class="clock-hand"></div>
+                    <div class="clock-center"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="horizontal-line"></div>
+        <div id="levelPerfect" class="level-perfect">水平!</div>
+        <div id="debugInfo" class="debug-info"></div>
+    </div>
+
+    <script>
+        // 位置和速度追踪变量
+        let lastPosition = null;
+        let currentSpeed = 0;
+        let watchId = null;
+        let speedBuffer = []; // 用于平滑速度显示
+        const SPEED_BUFFER_SIZE = 3; // 速度平滑缓冲区大小
+        
+        // 获取元素
+        const angleDisplay = document.getElementById('angleDisplay');
+        const angleValue = document.getElementById('angleValue');
+        const heightDisplay = document.getElementById('heightDisplay');
+        const clockHand = document.getElementById('clockHand');
+        const clockMarkers = document.getElementById('clockMarkers');
+        const permissionButton = document.getElementById('permissionButton');
+        const debugInfo = document.getElementById('debugInfo');
+        const levelPerfect = document.getElementById('levelPerfect');
+        const speedDisplay = document.getElementById('speedDisplay');
+        const speedValue = document.getElementById('speedValue');
+        
+        // 校准偏移角度初始化为0
+        let calibrationOffsetAngle = 0;
+
+        // 创建时钟刻度
+        function createClockMarkers() {
+            for (let i = 0; i < 360; i += 6) {
+                const marker = document.createElement('div');
+                marker.className = 'clock-marker';
+                if (i % 30 === 0) {
+                    marker.className += ' major';
+                }
+                marker.style.transform = `rotate(${i}deg) translateX(-50%)`;
+                clockMarkers.appendChild(marker);
+            }
+        }
+        createClockMarkers();
+
+        // 初始角度值
+        let beta = 0;  // X轴旋转角度 (前后倾斜)
+        let gamma = 0; // Y轴旋转角度 (左右倾斜)
+
+        // 检查设备方向API是否可用
+        if (window.DeviceOrientationEvent) {
+            permissionButton.addEventListener('click', requestPermissions);
+        } else {
+            permissionButton.textContent = "您的设备不支持方向检测";
+            permissionButton.classList.add('no-support');
+            permissionButton.disabled = true;
+        }
+
+        // 请求所有必要的权限
+        function requestPermissions() {
+            // 请求设备方向和地理位置权限
+            const requestDeviceOrientation = () => {
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    // iOS 13+ 需要请求权限
+                    return DeviceOrientationEvent.requestPermission();
+                } else {
+                    // 其他设备不需要请求权限
+                    return Promise.resolve('granted');
+                }
+            };
+            
+            const requestGeolocation = () => {
+                return new Promise((resolve, reject) => {
+                    if ('geolocation' in navigator) {
+                        navigator.geolocation.getCurrentPosition(
+                            () => resolve('granted'),
+                            (error) => {
+                                console.warn('地理位置权限错误:', error);
+                                resolve('denied');
+                            }
+                        );
+                    } else {
+                        console.warn('地理位置API不可用');
+                        resolve('not-supported');
+                    }
+                });
+            };
+            
+            // 请求所有权限
+            Promise.all([requestDeviceOrientation(), requestGeolocation()])
+                .then(([orientationPermission, locationPermission]) => {
+                    if (orientationPermission === 'granted') {
+                        window.addEventListener('deviceorientation', handleOrientation);
+                        permissionButton.style.display = 'none';
+                        calibrateButton.style.display = 'block';
+                        
+                        // 设置校准按钮事件
+                        calibrateButton.addEventListener('click', calibrate);
+                        
+                        // 如果地理位置权限也获取了，启动GPS监控
+                        if (locationPermission === 'granted') {
+                            startLocationTracking();
+                            speedDisplay.style.display = 'block';
+                        }
+                        
+                        // 自动执行校准
+                        calibrate();
+                    } else {
+                        alert('需要传感器权限来测量倾斜度');
+                    }
+                })
+                .catch(error => {
+                    console.error('请求权限失败:', error);
+                    alert('请求权限失败，请确保您使用的是支持的移动设备和浏览器');
+                    permissionButton.textContent = '重试获取权限';
+                    permissionButton.style.display = 'block';
+                });
+        }
+        
+        // 校准函数
+        function calibrate() {
+            // 保存当前计算出的角度作为校准基准
+            calibrationOffsetAngle = calculateScreenAngle(beta, gamma);
+            //alert('校准完成！');
+        }
+        
+        // 启动位置追踪
+        function startLocationTracking() {
+            if ('geolocation' in navigator) {
+                watchId = navigator.geolocation.watchPosition(
+                    updatePosition, 
+                    (error) => { console.error('获取GPS位置失败:', error); },
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+                );
+            }
+        }
+        
+        // 更新位置信息
+        function updatePosition(position) {
+            const currentPosition = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                timestamp: position.timestamp,
+                accuracy: position.coords.accuracy
+            };
+            
+            if (lastPosition && lastPosition.timestamp !== currentPosition.timestamp) {
+                // 计算速度 (km/h)
+                const distance = calculateDistance(
+                    lastPosition.latitude, lastPosition.longitude,
+                    currentPosition.latitude, currentPosition.longitude
+                );
+                
+                const timeElapsed = (currentPosition.timestamp - lastPosition.timestamp) / 1000; // 秒
+                
+                if (timeElapsed > 0 && distance >= 0) {
+                    // 转换为 km/h
+                    currentSpeed = (distance / timeElapsed) * 3.6;
+                    
+                    // 如果精度不够好，或者速度异常，可以过滤掉
+                    if (currentPosition.accuracy > 20 || currentSpeed > 200) {
+                        currentSpeed = lastPosition.speed || 0;
+                    }
+                    
+                    // 更新显示
+                    speedValue.textContent = currentSpeed.toFixed(1);
+                }
+            }
+            
+            // 更新最后位置
+            lastPosition = { 
+                ...currentPosition,
+                speed: currentSpeed
+            };
+        }
+        
+        // 使用 Haversine 公式计算两点之间的距离 (km)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // 地球半径 (km)
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c; // 距离 (km)
+            
+            return distance;
+        }
+
+// 处理方向数据
+function handleOrientation(event) {
+    // 获取设备方向数据
+    beta = event.beta || 0;   // X轴 - 前后倾斜 (-180到180)
+    gamma = event.gamma || 0; // Y轴 - 左右倾斜 (-90到90)
+
+    // 计算屏幕与水平面的夹角
+    const rawScreenAngle = calculateScreenAngle(beta, gamma);
+
+    // 应用校准偏移，保留正负号以区分上下坡
+    const adjustedAngle = rawScreenAngle - calibrationOffsetAngle;
+
+    // 保留符号，正数表示上坡，负数表示下坡
+    const screenAngle = adjustedAngle;
+    const isUphill = screenAngle >= 0;
+
+    // 更新角度显示，直接显示带符号的角度值
+    //angleValue.textContent = `${screenAngle.toFixed(1)}°`;
+
+    // 计算垂直高度（假设斜边为100米的情况下）
+    const angleRadians = Math.abs(screenAngle) * Math.PI / 180;
+    const horizontalDistance = 100; // 单位：米
+    const heightChange = Math.sin(angleRadians) * horizontalDistance;
+    
+    // 显示垂直高度变化
+    // 检查是否为校准后的初始状态（校准参数接近0）
+    if (Math.abs(calibrationOffsetAngle) < 0.1) {
+        angleValue.className = '';
+        angleValue.textContent = `坡度：${screenAngle.toFixed(1)}°`;
+    } else {
+            // 根据上下坡设置不同颜色
+        if (Math.abs(screenAngle) >= 2) {
+            if (isUphill) {
+            // 上坡为绿色
+            angleValue.className = 'angle-uphill';
+            angleValue.textContent = `上坡：${screenAngle.toFixed(1)}°`;
+            } else {
+            // 下坡为红色
+            angleValue.className = 'angle-downhill';
+            angleValue.textContent = `下坡：${screenAngle.toFixed(1)}°`;
+            }
+        }
+    }
+    // 更新垂直高度显示   
+    heightDisplay.textContent = `垂直高度: ${heightChange.toFixed(2)}m/100m`;
+
+    // 更新时钟指针旋转和颜色
+    updateClockHand(screenAngle);
+
+    // 更新调试信息
+    debugInfo.innerHTML = `
+        Beta (X): ${beta.toFixed(1)}° |
+        Gamma (Y): ${gamma.toFixed(1)}°
+    `;
+
+    // 显示"水平!"提示，当角度小于0.5度
+    if (Math.abs(screenAngle) < 0.5) {
+        levelPerfect.style.opacity = '1';
+    } else {
+        levelPerfect.style.opacity = '0';
+    }
+}
+
+        // 计算屏幕与水平面的夹角
+        function calculateScreenAngle(beta, gamma) {
+            // 将角度转换为弧度
+            const betaRad = beta * Math.PI / 180;
+            const gammaRad = gamma * Math.PI / 180;
+
+            // 屏幕法向量（垂直于屏幕的单位向量）
+            const nx = Math.sin(gammaRad);
+            const ny = -Math.sin(betaRad) * Math.cos(gammaRad);
+            const nz = Math.cos(betaRad) * Math.cos(gammaRad);
+
+            // 计算与垂直向上向量(0,0,1)的夹角
+            const dotProduct = nz;
+            // 确保点积在[-1,1]范围内，避免数值计算误差
+            const clampedDot = Math.max(-1, Math.min(1, dotProduct));
+            const angle = Math.acos(clampedDot) * 180 / Math.PI;
+
+            return angle;
+        }
+
+// 更新时钟指针旋转和颜色
+function updateClockHand(screenAngle) {
+    // 旋转时钟指针来表示倾斜角度
+    // 当屏幕水平时指针指向12点钟方向(0度)，完全垂直时转动90度
+    const rotationAngle = Math.abs(screenAngle); // 使用绝对值来正确旋转指针
+    clockHand.style.transform = `rotate(${rotationAngle}deg)`;
+
+    // 根据倾斜角度改变指针颜色
+    const normalizedAngle = Math.min(Math.abs(screenAngle) / 90, 1); // 归一化到[0,1]区间
+
+    // 颜色根据上下坡不同：上坡(蓝绿)，下坡(红色)
+    let red, green, blue;
+    if (screenAngle >= 0) {
+        // 上坡：从绿色到蓝绿色
+        red = 0;
+        green = Math.floor(188 + (255 - 188) * (1 - normalizedAngle));
+        blue = Math.floor(212 * normalizedAngle);
+    } else {
+        // 下坡：从绿色到红色
+        red = Math.floor(255 * normalizedAngle);
+        green = Math.floor(255 * (1 - normalizedAngle));
+        blue = 0;
+    }
+
+    clockHand.style.background = `linear-gradient(to top, rgba(${red}, ${green}, ${blue}, 0.9), rgba(${red}, ${green}, ${blue}, 0.5))`;
+    clockHand.style.boxShadow = `0 0 10px rgba(${red}, ${green}, ${blue}, 0.7)`;
+
+    // 根据角度值调整显示的大小和样式
+    if (Math.abs(screenAngle) < 5) {
+        angleDisplay.style.transform = 'scale(1.05)';
+        angleDisplay.style.boxShadow = '0 0 30px rgba(76, 175, 80, 0.5)';
+    } else {
+        angleDisplay.style.transform = 'scale(1)';
+        angleDisplay.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.3)';
+    }
+}
+
+        // 阻止默认的触摸事件，避免页面滚动或缩放
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // 防止屏幕休眠
+        function keepAwake() {
+            if (navigator.wakeLock) {
+                navigator.wakeLock.request('screen')
+                    .catch(err => console.error('屏幕保持唤醒状态失败:', err));
+            }
+        }
+
+        // 在用户交互后尝试保持屏幕唤醒
+        permissionButton.addEventListener('click', keepAwake);
+        
+        // 应用关闭或切换到后台时释放资源
+        window.addEventListener('beforeunload', () => {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+        });
+        
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            } else if (document.visibilityState === 'visible' && speedDisplay.style.display !== 'none') {
+                startLocationTracking();
+            }
+        });
+    </script>
+</body>
+</html>
