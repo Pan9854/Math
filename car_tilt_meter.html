@@ -193,14 +193,27 @@
         .speed-display {
             position: relative;
             font-size: 1.5rem;
+            font-weight: bold;
             color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
             background-color: rgba(0, 0, 0, 0.6);
-            padding: 10px 15px;
-            border-radius: 15px;
+            padding: 12px 20px;
+            border-radius: 20px;
             z-index: 100;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            animation: pulse 2s infinite ease-in-out;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             margin: 10px;
             width: 45%;
+        }
+        
+        .gps-display {
+            font-size: 1rem;
+            margin-top: 8px;
+            color: #64B5F6;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         }
 
         .permission-button.no-support {
@@ -278,7 +291,10 @@
                 <div><span id="angleValue">0.0°</span></div>
                 <div id="heightDisplay" class="height-display">垂直高度: 0.00</div>
             </div>
-            <div id="speedDisplay" class="speed-display" style="display:none;">速度: <span id="speedValue">0.0</span> km/h</div>
+            <div id="speedDisplay" class="speed-display" style="display:none;">
+                <div>速度: <span id="speedValue">0.0</span> km/h</div>
+                <div id="gpsDisplay" class="gps-display">位置: 等待数据...</div>
+            </div>
         </div>
 
         <div class="clock-container">
@@ -304,6 +320,7 @@
         let watchId = null;
         let speedBuffer = []; // 用于平滑速度显示
         const SPEED_BUFFER_SIZE = 3; // 速度平滑缓冲区大小
+        let lastSpeedUpdateTime = 0; // 上次速度更新的时间
         
         // 获取元素
         const angleDisplay = document.getElementById('angleDisplay');
@@ -316,6 +333,7 @@
         const levelPerfect = document.getElementById('levelPerfect');
         const speedDisplay = document.getElementById('speedDisplay');
         const speedValue = document.getElementById('speedValue');
+        const gpsDisplay = document.getElementById('gpsDisplay');
         
         // 校准偏移角度初始化为0
         let calibrationOffsetAngle = 0;
@@ -390,8 +408,9 @@
                         
                         // 如果地理位置权限也获取了，启动GPS监控
                         if (locationPermission === 'granted') {
-                            startLocationTracking();
-                            speedDisplay.style.display = 'block';
+                            speedDisplay.style.display = 'block'; // 先显示速度面板
+                            gpsDisplay.textContent = "正在获取位置...";
+                            startLocationTracking(); // 然后启动位置追踪
                         }
                         
                         // 自动执行校准
@@ -411,7 +430,8 @@
         // 校准函数
         function calibrate() {
             // 保存当前计算出的角度作为校准基准
-            calibrationOffsetAngle = calculateScreenAngle(beta, gamma);
+            //calibrationOffsetAngle = calculateScreenAngle(beta, gamma);
+            calibrationOffsetAngle = beta;
             //alert('校准完成！');
         }
         
@@ -428,6 +448,12 @@
         
         // 更新位置信息
         function updatePosition(position) {
+            // 显示GPS位置数据到gpsDisplay元素中
+            gpsDisplay.textContent = `位置: ${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+            
+            // 确保speedDisplay元素可见
+            speedDisplay.style.display = 'block';
+            
             const currentPosition = {
                 latitude: position.coords.latitude,
                 longitude: position.coords.longitude,
@@ -453,8 +479,20 @@
                         currentSpeed = lastPosition.speed || 0;
                     }
                     
-                    // 更新显示
-                    speedValue.textContent = currentSpeed.toFixed(1);
+                    // 使用速度缓冲实现平滑显示
+                    speedBuffer.push(currentSpeed);
+                    if (speedBuffer.length > SPEED_BUFFER_SIZE) {
+                        speedBuffer.shift(); // 移除最旧的速度数据
+                    }
+                    
+                    // 计算平均速度
+                    const avgSpeed = speedBuffer.reduce((sum, speed) => sum + speed, 0) / speedBuffer.length;
+                    
+                    // 更新显示平均速度
+                    speedValue.textContent = avgSpeed.toFixed(1);
+                    
+                    // 更新最后速度更新时间
+                    lastSpeedUpdateTime = Date.now();
                 }
             }
             
@@ -487,8 +525,8 @@ function handleOrientation(event) {
     gamma = event.gamma || 0; // Y轴 - 左右倾斜 (-90到90)
 
     // 计算屏幕与水平面的夹角
-    const rawScreenAngle = calculateScreenAngle(beta, gamma);
-
+    //const rawScreenAngle = calculateScreenAngle(beta, gamma);
+    const rawScreenAngle = beta;
     // 应用校准偏移，保留正负号以区分上下坡
     const adjustedAngle = rawScreenAngle - calibrationOffsetAngle;
 
@@ -634,6 +672,7 @@ function updateClockHand(screenAngle) {
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
             } else if (document.visibilityState === 'visible' && speedDisplay.style.display !== 'none') {
+                gpsDisplay.textContent = "正在重新获取位置...";
                 startLocationTracking();
             }
         });
