@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Monte Carlo Method for Calculating Pi (π)</title>
+<style>
+  /* 基础样式 */
+  :root {
+    --main-color: #4169e1;
+    --accent-color: #ffcc00;
+    --correct-color: #4caf50;
+    --wrong-color: #f44336;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(#f0f8ff, #e6e6fa);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    color: #333;
+  }
+
+  /* Top Information Bar */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: rgba(255,255,255,0.9);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  }
+
+  .back-button {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--main-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border: none;
+  }
+
+  .home-icon {
+    width: 18px;
+    height: 18px;
+    stroke: white;
+    display: block;
+  }
+
+  /* 主容器 */
+  .main-container {
+    width: 100%;
+    max-width: 800px;
+    padding: 15px;
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Statistics Bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 5px;
+  }
+
+  /* Canvas Container */
+  .canvas-container {
+    width: 100%;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Description Area */
+  .description {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  /* Canvas Style */
+  #monte-carlo-canvas {
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    background-color: #f8f8f8;
+    margin-bottom: 20px;
+  }
+
+  /* Control Buttons */
+  .control-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 15px;
+  }
+
+  /* Button Style */
+  .btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .btn-primary {
+    background: var(--main-color);
+    color: white;
+    box-shadow: 0 4px 10px rgba(65, 105, 225, 0.3);
+  }
+
+  .btn-secondary {
+    background: #f1f1f1;
+    color: #333;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Data Input Area */
+  .input-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    width: 100%;
+  }
+
+  .input-group label {
+    margin-right: 10px;
+    font-weight: 500;
+  }
+
+  .input-group input {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    flex-grow: 1;
+    font-size: 16px;
+  }
+
+  /* Result Area */
+  .result-area {
+    width: 100%;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-top: 15px;
+  }
+
+  .result-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: var(--main-color);
+  }
+
+  .result-content {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* Progress Bar */
+  .progress-container {
+    width: 100%;
+    background-color: #f1f1f1;
+    border-radius: 10px;
+    margin: 15px 0;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 20px;
+    background-color: var(--main-color);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    text-align: center;
+    color: white;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  /* Animation Effects */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fadeIn {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  /* Optional Parameter Control Area */
+  .parameters-section {
+    width: 100%;
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 15px;
+  }
+
+  .parameters-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #555;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 500px) {
+    .control-buttons {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+    }
+
+    .stats-bar {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<!-- Top Bar -->
+<div class="top-bar">
+  <a href="../index.html" class="back-button">
+    <svg class="home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+  </a>
+  <div>Monte Carlo Method for Pi</div>
+  <div class="points-display">Points: <span id="totalPoints">0</span></div>
+</div>
+
+<!-- Main Container -->
+<div class="main-container">
+  <!-- Statistics Information -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div>Points in Circle:</div>
+      <div class="stat-value" id="pointsInCircle">0</div>
+    </div>
+    <div class="stat-card">
+      <div>Total Points:</div>
+      <div class="stat-value" id="totalPointsDisplay">0</div>
+    </div>
+    <div class="stat-card">
+      <div>Estimated π Value:</div>
+      <div class="stat-value" id="piEstimation">0</div>
+    </div>
+    <div class="stat-card">
+      <div>Exact π Value:</div>
+      <div class="stat-value">3.14159...</div>
+    </div>
+  </div>
+
+  <!-- Canvas Container -->
+  <div class="canvas-container fadeIn">
+    <div class="description">
+      <p>The Monte Carlo method is a statistical simulation technique that can be used to estimate the value of π.</p>
+      <p>Random points are generated inside a square with side length 2r, and we count the proportion that fall within an inscribed circle of radius r.</p>
+      <p>Since the area of the circle is πr² and the area of the square is (2r)²=4r², the ratio of points in the circle to total points is approximately π/4.</p>
+    </div>
+
+    <canvas id="monte-carlo-canvas" width="300" height="300"></canvas>
+
+    <!-- Progress Bar -->
+    <div class="progress-container">
+      <div id="simulation-progress" class="progress-bar" style="width: 0%">0%</div>
+    </div>
+
+    <!-- Control Area -->
+    <div class="input-group">
+      <label for="pointsInput">Simulation Points:</label>
+      <input type="number" id="pointsInput" min="100" max="100000" value="1000">
+    </div>
+
+    <div class="control-buttons">
+      <button class="btn btn-primary" id="startButton">Start Simulation</button>
+      <button class="btn btn-secondary" id="pauseButton" disabled>Pause</button>
+      <button class="btn btn-secondary" id="resetButton">Reset</button>
+    </div>
+  </div>
+
+  <!-- Result Area -->
+  <div class="result-area fadeIn">
+    <div class="result-title">Simulation Results</div>
+    <div class="result-content" id="result-details">
+      <p>The Monte Carlo method can estimate the value of π using statistical principles.</p>
+      <p>As the number of random points increases, the estimated result will get closer to the true value of π.</p>
+      <p>Click the "Start Simulation" button to begin the experiment.</p>
+    </div>
+  </div>
+
+  <!-- Parameters Adjustment Area -->
+  <div class="parameters-section fadeIn">
+    <div class="parameters-title">Speed Control</div>
+    <div class="input-group">
+      <label for="speedControl">Drawing Speed:</label>
+      <input type="range" id="speedControl" min="1" max="100" value="20">
+    </div>
+  </div>
+</div>
+
+<script>
+// Global variables
+let canvas = document.getElementById('monte-carlo-canvas');
+let ctx = canvas.getContext('2d');
+let pointsInCircle = 0;
+let totalPoints = 0;
+let animationId = null;
+let isPaused = false;
+let simulationRunning = false;
+let radius = canvas.width / 2;
+let targetPoints = parseInt(document.getElementById('pointsInput').value);
+let speed = parseInt(document.getElementById('speedControl').value);
+let pointsPerFrame = 5; // Number of points per frame
+
+// Initialize canvas
+function initCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw square boundary
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+  // Draw circle
+  ctx.beginPath();
+  ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#4169e1';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Draw coordinate axes
+  ctx.beginPath();
+  ctx.moveTo(0, radius);
+  ctx.lineTo(canvas.width, radius);
+  ctx.moveTo(radius, 0);
+  ctx.lineTo(radius, canvas.height);
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// Reset data
+function resetSimulation() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+
+  pointsInCircle = 0;
+  totalPoints = 0;
+  simulationRunning = false;
+  isPaused = false;
+
+  document.getElementById('pointsInCircle').innerText = '0';
+  document.getElementById('totalPointsDisplay').innerText = '0';
+  document.getElementById('totalPoints').innerText = '0';
+  document.getElementById('piEstimation').innerText = '0';
+  document.getElementById('simulation-progress').style.width = '0%';
+  document.getElementById('simulation-progress').innerText = '0%';
+
+  document.getElementById('startButton').disabled = false;
+  document.getElementById('startButton').innerText = 'Start Simulation';
+  document.getElementById('pauseButton').disabled = true;
+
+  initCanvas();
+
+  // Reset result text
+  document.getElementById('result-details').innerHTML = `
+    <p>The Monte Carlo method can estimate the value of π using statistical principles.</p>
+    <p>As the number of random points increases, the estimated result will get closer to the true value of π.</p>
+    <p>Click the "Start Simulation" button to begin the experiment.</p>
+  `;
+}
+
+// Check if point is inside the circle
+function isInCircle(x, y) {
+  // Calculate distance from point to circle center
+  const distanceSquared = Math.pow(x - radius, 2) + Math.pow(y - radius, 2);
+  // If distance is less than radius, point is inside circle
+  return distanceSquared <= radius * radius;
+}
+
+// Generate random points and update canvas
+function generatePoints() {
+  if (!simulationRunning || isPaused) return;
+
+  const batchPoints = Math.min(pointsPerFrame * speed, targetPoints - totalPoints);
+
+  for (let i = 0; i < batchPoints; i++) {
+    if (totalPoints >= targetPoints) {
+      finishSimulation();
+      return;
+    }
+
+    // 生成[0, canvas.width]范围内的随机坐标
+    const x = Math.random() * canvas.width;
+    const y = Math.random() * canvas.height;
+
+    // Check if point is inside the circle
+    const inCircle = isInCircle(x, y);
+
+    // Draw point
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, 2 * Math.PI);
+    ctx.fillStyle = inCircle ? '#4caf50' : '#f44336';
+    ctx.fill();
+
+    // Update count
+    if (inCircle) {
+      pointsInCircle++;
+    }
+    totalPoints++;
+
+    // Update display
+    updateDisplay();
+  }
+
+  // If not finished, continue to next frame
+  if (totalPoints < targetPoints) {
+    animationId = requestAnimationFrame(generatePoints);
+  } else {
+    finishSimulation();
+  }
+}
+
+// Update interface display
+function updateDisplay() {
+  document.getElementById('pointsInCircle').innerText = pointsInCircle;
+  document.getElementById('totalPointsDisplay').innerText = totalPoints;
+  document.getElementById('totalPoints').innerText = totalPoints;
+  
+  // Calculate estimated value of π
+  const piEstimation = (pointsInCircle / totalPoints) * 4;
+  document.getElementById('piEstimation').innerText = piEstimation.toFixed(6);
+  
+  // Update progress bar
+  const progress = (totalPoints / targetPoints) * 100;
+  document.getElementById('simulation-progress').style.width = `${progress}%`;
+  document.getElementById('simulation-progress').innerText = `${Math.round(progress)}%`;
+}
+
+// Complete simulation and display results
+function finishSimulation() {
+  simulationRunning = false;
+  
+  // Calculate final results
+  const piApproximation = (pointsInCircle / totalPoints) * 4;
+  const error = Math.abs(piApproximation - Math.PI);
+  const errorPercentage = (error / Math.PI) * 100;
+  
+  // Update result area
+  document.getElementById('result-details').innerHTML = `
+    <p>Simulation complete! Generated <strong>${totalPoints}</strong> random points.</p>
+    <p>Of these, <strong>${pointsInCircle}</strong> points fell within the circle.</p>
+    <p>Estimated π value: <strong>${piApproximation.toFixed(6)}</strong></p>
+    <p>Actual π value: <strong>${Math.PI.toFixed(6)}</strong></p>
+    <p>Error: <strong>${error.toFixed(6)}</strong> (${errorPercentage.toFixed(4)}%)</p>
+    <p>As the number of points increases, the estimate becomes closer to the true value.</p>
+  `;
+  
+  // Update button status
+  document.getElementById('startButton').disabled = false;
+  document.getElementById('startButton').innerText = 'Restart Simulation';
+  document.getElementById('pauseButton').disabled = true;
+}
+
+// Event listener setup
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize canvas
+  initCanvas();
+  
+  // Start button click event
+  document.getElementById('startButton').addEventListener('click', function() {
+    if (simulationRunning && isPaused) {
+      // If paused, continue simulation
+      isPaused = false;
+      this.disabled = true;
+      document.getElementById('pauseButton').disabled = false;
+      animationId = requestAnimationFrame(generatePoints);
+    } else if (!simulationRunning) {
+      // Start new simulation
+      resetSimulation();
+      targetPoints = parseInt(document.getElementById('pointsInput').value);
+      speed = parseInt(document.getElementById('speedControl').value);
+      simulationRunning = true;
+      this.disabled = true;
+      document.getElementById('pauseButton').disabled = false;
+      animationId = requestAnimationFrame(generatePoints);
+    }
+  });
+  
+  // Pause button click event
+  document.getElementById('pauseButton').addEventListener('click', function() {
+    isPaused = true;
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+    }
+    document.getElementById('startButton').disabled = false;
+    document.getElementById('startButton').innerText = 'Continue';
+    this.disabled = true;
+  });
+  
+  // Reset button click event
+  document.getElementById('resetButton').addEventListener('click', function() {
+    resetSimulation();
+  });
+  
+  // Speed slider change event
+  document.getElementById('speedControl').addEventListener('input', function() {
+    speed = parseInt(this.value);
+  });
+});
+</script>
+</body>
+</html>

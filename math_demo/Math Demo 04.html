@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fibonacci Sequence and Golden Ratio Visualization</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .description {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .fibonacci-numbers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .number-box {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: all 0.3s;
+            background-color: #ecf0f1;
+        }
+        .highlight {
+            background-color: #f39c12;
+            color: white;
+            transform: scale(1.1);
+        }
+        .spiral-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+        #spiral-canvas {
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+        .ratio-display {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 15px 0;
+        }
+        .ratio-display span {
+            font-weight: bold;
+            color: #e67e22;
+        }
+        .golden-rectangle {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        #rectangle-canvas {
+            border: 1px solid #ddd;
+        }
+        .info-panel {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .formula {
+            text-align: center;
+            margin: 10px 0;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fibonacci Sequence and Golden Ratio</h1>
+
+        <div class="description">
+            <p>The Fibonacci sequence is a series of numbers where each number is the sum of the two preceding ones, 
+            usually starting with 0 and 1. The ratio of consecutive Fibonacci numbers approaches the golden ratio (φ ≈ 1.618), 
+            a special mathematical constant that appears in various aspects of art, architecture, and nature.</p>
+        </div>
+
+        <div class="controls">
+            <button id="generate-btn">Generate Next Number</button>
+            <button id="animate-btn">Animate Sequence</button>
+            <button id="reset-btn">Reset</button>
+        </div>
+
+        <div class="section">
+            <h2>Fibonacci Sequence</h2>
+            <div class="fibonacci-numbers" id="fibonacci-display"></div>
+
+            <div class="ratio-display">
+                Current ratio: <span id="current-ratio">-</span>
+                <br>
+                Golden Ratio (φ): <span>1.6180339887...</span>
+            </div>
+
+            <div class="info-panel">
+                <h3>Ratio Calculation</h3>
+                <table id="ratio-table">
+                    <thead>
+                        <tr>
+                            <th>n</th>
+                            <th>F(n)</th>
+                            <th>F(n+1)</th>
+                            <th>F(n+1)/F(n)</th>
+                            <th>Difference from φ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Fibonacci Spiral</h2>
+            <p>The Fibonacci spiral is created by drawing arcs connecting the opposite corners of squares in the Fibonacci tiling. 
+            This spiral approximates the golden spiral, which is a logarithmic spiral whose growth factor is the golden ratio.</p>
+
+            <div class="spiral-container">
+                <canvas id="spiral-canvas" width="500" height="500"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Golden Rectangle</h2>
+            <p>A golden rectangle is a rectangle whose side lengths are in the golden ratio. When squares are removed, 
+            the remaining rectangle is still a golden rectangle, creating a recursive pattern.</p>
+
+            <div class="golden-rectangle">
+                <canvas id="rectangle-canvas" width="600" height="400"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Mathematical Properties</h2>
+            <p>The Fibonacci sequence is defined by the recurrence relation:</p>
+            <div class="formula">F(n) = F(n-1) + F(n-2), where F(0) = 0 and F(1) = 1</div>
+
+            <p>The golden ratio (φ) can be defined as:</p>
+            <div class="formula">φ = (1 + √5) / 2 ≈ 1.6180339887...</div>
+
+            <p>The relationship between Fibonacci numbers and the golden ratio is expressed in Binet's formula:</p>
+            <div class="formula">F(n) = (φ^n - (1-φ)^n) / √5</div>
+
+            <p>As n increases, the ratio F(n+1)/F(n) gets closer and closer to φ.</p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize variables
+        let fibSequence = [0, 1];
+        let animationSpeed = 800;
+        let animationRunning = false;
+        let animationId;
+
+        // DOM elements
+        const fibDisplay = document.getElementById('fibonacci-display');
+        const generateBtn = document.getElementById('generate-btn');
+        const animateBtn = document.getElementById('animate-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const currentRatioDisplay = document.getElementById('current-ratio');
+        const ratioTable = document.getElementById('ratio-table').querySelector('tbody');
+        const spiralCanvas = document.getElementById('spiral-canvas');
+        const spiralCtx = spiralCanvas.getContext('2d');
+        const rectangleCanvas = document.getElementById('rectangle-canvas');
+        const rectangleCtx = rectangleCanvas.getContext('2d');
+
+        // Golden ratio constant
+        const PHI = (1 + Math.sqrt(5)) / 2;
+
+        // Initialize display
+        function initDisplay() {
+            fibDisplay.innerHTML = '';
+            ratioTable.innerHTML = '';
+
+            fibSequence.forEach((num, index) => {
+                const numBox = document.createElement('div');
+                numBox.className = 'number-box';
+                numBox.textContent = num;
+                numBox.dataset.index = index;
+                fibDisplay.appendChild(numBox);
+            });
+
+            updateRatioDisplay();
+            drawFibonacciSpiral();
+            drawGoldenRectangle();
+        }
+
+        // Update ratio display and table
+        function updateRatioDisplay() {
+            if (fibSequence.length > 1) {
+                const lastIndex = fibSequence.length - 1;
+                const lastNum = fibSequence[lastIndex];
+                const prevNum = fibSequence[lastIndex - 1];
+
+                if (prevNum !== 0) {
+                    const ratio = lastNum / prevNum;
+                    const diffFromPhi = Math.abs(ratio - PHI);
+                    currentRatioDisplay.textContent = ratio.toFixed(10);
+
+                    // Add to table
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${lastIndex}</td>
+                        <td>${prevNum}</td>
+                        <td>${lastNum}</td>
+                        <td>${ratio.toFixed(10)}</td>
+                        <td>${diffFromPhi.toFixed(10)}</td>
+                    `;
+                    ratioTable.appendChild(row);
+                }
+            }
+        }
+
+        // Generate next Fibonacci number
+        function generateNextFibonacci() {
+            if (fibSequence.length >= 25) {
+                generateBtn.disabled = true;
+                return;
+            }
+
+            const nextNum = fibSequence[fibSequence.length - 1] + fibSequence[fibSequence.length - 2];
+            fibSequence.push(nextNum);
+
+            const numBox = document.createElement('div');
+            numBox.className = 'number-box highlight';
+            numBox.textContent = nextNum;
+            numBox.dataset.index = fibSequence.length - 1;
+            fibDisplay.appendChild(numBox);
+
+            setTimeout(() => {
+                numBox.classList.remove('highlight');
+            }, 500);
+
+            updateRatioDisplay();
+            drawFibonacciSpiral();
+            drawGoldenRectangle();
+        }
+
+        // Reset sequence
+        function resetSequence() {
+            fibSequence = [0, 1];
+            generateBtn.disabled = false;
+            stopAnimation();
+            initDisplay();
+        }
+
+        // Animate sequence generation
+        function animateSequence() {
+            if (animationRunning) {
+                stopAnimation();
+                animateBtn.textContent = "Animate Sequence";
+            } else {
+                animationRunning = true;
+                animateBtn.textContent = "Stop Animation";
+
+                function step() {
+                    if (fibSequence.length < 25) {
+                        generateNextFibonacci();
+                        animationId = setTimeout(step, animationSpeed);
+                    } else {
+                        stopAnimation();
+                    }
+                }
+
+                step();
+            }
+        }
+
+        // Stop animation
+        function stopAnimation() {
+            animationRunning = false;
+            clearTimeout(animationId);
+            animateBtn.textContent = "Animate Sequence";
+        }
+
+        // Draw Fibonacci spiral
+        function drawFibonacciSpiral() {
+            const ctx = spiralCtx;
+            const canvas = spiralCanvas;
+            const width = canvas.width;
+            const height = canvas.height;
+            const maxSize = Math.min(width, height) * 0.9;
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (fibSequence.length < 3) return;
+
+            // Scale factor based on the largest Fibonacci number
+            const maxFib = Math.max(...fibSequence);
+            const scale = maxSize / (maxFib * 2);
+
+            // Start from the center
+            let x = width / 2;
+            let y = height / 2;
+
+            // Draw squares
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#333';
+
+            // Starting position and direction
+            let direction = 0; // 0: right, 1: down, 2: left, 3: up
+
+            // Skip first two Fibonacci numbers (0 and 1)
+            for (let i = 2; i < fibSequence.length; i++) {
+                const size = fibSequence[i] * scale;
+
+                // Draw square based on direction
+                ctx.beginPath();
+                switch (direction) {
+                    case 0: // right
+                        ctx.rect(x, y - size, size, size);
+                        x += size;
+                        break;
+                    case 1: // down
+                        ctx.rect(x - size, y, size, size);
+                        y += size;
+                        break;
+                    case 2: // left
+                        ctx.rect(x - size, y - size, size, size);
+                        x -= size;
+                        break;
+                    case 3: // up
+                        ctx.rect(x, y - size, size, size);
+                        y -= size;
+                        break;
+                }
+                ctx.stroke();
+
+                // Update direction (rotate counterclockwise)
+                direction = (direction + 1) % 4;
+            }
+
+            // Draw spiral
+            ctx.beginPath();
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2;
+
+            // Reset position and direction
+            x = width / 2;
+            y = height / 2;
+            direction = 0;
+
+            // Draw arc for each fibonacci number
+            for (let i = 2; i < fibSequence.length; i++) {
+                const radius = fibSequence[i] * scale;
+                let startAngle, endAngle;
+
+                switch (direction) {
+                    case 0: // right
+                        startAngle = Math.PI;
+                        endAngle = Math.PI * 1.5;
+                        ctx.arc(x, y - radius, radius, startAngle, endAngle, false);
+                        x += radius;
+                        y -= radius;
+                        break;
+                    case 1: // down
+                        startAngle = Math.PI * 1.5;
+                        endAngle = 0;
+                        ctx.arc(x - radius, y - radius, radius, startAngle, endAngle, false);
+                        x -= radius;
+                        y += radius;
+                        break;
+                    case 2: // left
+                        startAngle = 0;
+                        endAngle = Math.PI / 2;
+                        ctx.arc(x - radius, y, radius, startAngle, endAngle, false);
+                        x -= radius;
+                        y += radius;
+                        break;
+                    case 3: // up
+                        startAngle = Math.PI / 2;
+                        endAngle = Math.PI;
+                        ctx.arc(x, y, radius, startAngle, endAngle, false);
+                        x += radius;
+                        y -= radius;
+                        break;
+                }
+
+                direction = (direction + 1) % 4;
+            }
+
+            ctx.stroke();
+        }
+
+        // Draw Golden Rectangle
+        function drawGoldenRectangle() {
+            const ctx = rectangleCtx;
+            const canvas = rectangleCanvas;
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            const baseSize = Math.min(width, height) * 0.8;
+            const rectWidth = baseSize;
+            const rectHeight = baseSize / PHI;
+
+            const startX = (width - rectWidth) / 2;
+            const startY = (height - rectHeight) / 2;
+
+            // Draw main rectangle
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#3498db';
+            ctx.strokeRect(startX, startY, rectWidth, rectHeight);
+
+            // Draw nested golden rectangles
+            ctx.lineWidth = 1;
+            drawNestedRectangles(ctx, startX, startY, rectWidth, rectHeight, 6);
+
+            // Draw spiral in golden rectangle
+            ctx.beginPath();
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2;
+            drawGoldenSpiral(ctx, startX, startY, rectWidth, rectHeight, 6);
+            ctx.stroke();
+        }
+
+        // Draw nested golden rectangles
+        function drawNestedRectangles(ctx, x, y, width, height, depth) {
+            if (depth <= 0) return;
+
+            if (width > height) {
+                // Cut off a square from the left
+                const squareSize = height;
+                ctx.strokeRect(x, y, squareSize, squareSize);
+
+                // Continue with the remaining rectangle
+                drawNestedRectangles(ctx, x + squareSize, y, width - squareSize, height, depth - 1);
+            } else {
+                // Cut off a square from the top
+                const squareSize = width;
+                ctx.strokeRect(x, y, squareSize, squareSize);
+
+                // Continue with the remaining rectangle
+                drawNestedRectangles(ctx, x, y + squareSize, width, height - squareSize, depth - 1);
+            }
+        }
+
+        // Draw golden spiral
+        function drawGoldenSpiral(ctx, x, y, width, height, depth) {
+            if (depth <= 0) return;
+
+            if (width > height) {
+                // Draw arc in the square
+                const squareSize = height;
+                ctx.arc(x + squareSize, y + squareSize, squareSize, Math.PI, Math.PI * 1.5, false);
+
+                // Continue with the remaining rectangle
+                drawGoldenSpiral(ctx, x + squareSize, y, width - squareSize, height, depth - 1);
+            } else {
+                // Draw arc in the square
+                const squareSize = width;
+                ctx.arc(x, y, squareSize, 0, Math.PI * 0.5, false);
+
+                // Continue with the remaining rectangle
+                drawGoldenSpiral(ctx, x, y + squareSize, width, height - squareSize, depth - 1);
+            }
+        }
+
+        // Event listeners
+        generateBtn.addEventListener('click', generateNextFibonacci);
+        resetBtn.addEventListener('click', resetSequence);
+        animateBtn.addEventListener('click', animateSequence);
+
+        // Initialize on page load
+        initDisplay();
+    </script>
+</body>
+</html>

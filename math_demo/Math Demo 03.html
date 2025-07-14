@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sieve of Eratosthenes Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            margin: 20px auto;
+        }
+
+        .number-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .prime {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .composite {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .current {
+            border: 3px solid #FF9800;
+        }
+
+        .eliminating {
+            animation: flash 1s;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #2196F3;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background-color: #0b7dda;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .factors {
+            position: absolute;
+            bottom: 2px;
+            font-size: 8px;
+            width: 100%;
+            text-align: center;
+        }
+
+        @keyframes flash {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            text-align: left;
+        }
+
+        .prime-colors {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .explanation {
+            text-align: left;
+            margin-top: 30px;
+            line-height: 1.6;
+        }
+
+        .step-info {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sieve of Eratosthenes Visualization</h1>
+
+    <div class="controls">
+        <button id="start">Start Demo</button>
+        <button id="step" disabled>Next Step</button>
+        <button id="reset">Reset</button>
+        <div class="speed-control">
+            <label for="speed">Speed: </label>
+            <input type="range" id="speed" min="1" max="10" value="5">
+        </div>
+        <select id="grid-size">
+            <option value="100">100 Numbers</option>
+            <option value="200">200 Numbers</option>
+            <option value="400">400 Numbers</option>
+        </select>
+    </div>
+
+    <div class="step-info" id="step-info">Ready to start the sieve process...</div>
+
+    <div class="grid-container" id="grid"></div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: white;"></div>
+            <span>Pending</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #4CAF50;"></div>
+            <span>Prime</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #f0f0f0;"></div>
+            <span>Composite</span>
+        </div>
+    </div>
+
+    <div class="prime-colors" id="prime-colors"></div>
+
+    <div class="info-panel">
+        <h3>Sieve of Eratosthenes</h3>
+        <p>The Sieve of Eratosthenes is an ancient and efficient algorithm for finding all prime numbers within a given range. The process is as follows:</p>
+        <ol>
+            <li>Create a consecutive list of integers from 2 to n</li>
+            <li>Initially set p=2, this is the first prime number</li>
+            <li>Mark all multiples of p (p×p, p×(p+1), p×(p+2), ...) as composite numbers</li>
+            <li>Find the next unmarked number, this is the next prime</li>
+            <li>Repeat steps 3 and 4 until no more prime numbers remain</li>
+        </ol>
+        <p>In this demonstration, prime numbers are marked in green, and composite numbers display their prime factors. Through color mixing, you can visually see the prime factor composition of each composite number.</p>
+    </div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const startBtn = document.getElementById('start');
+        const stepBtn = document.getElementById('step');
+        const resetBtn = document.getElementById('reset');
+        const speedControl = document.getElementById('speed');
+        const gridSizeSelect = document.getElementById('grid-size');
+        const stepInfo = document.getElementById('step-info');
+        const primeColorsDiv = document.getElementById('prime-colors');
+
+        let gridSize = parseInt(gridSizeSelect.value);
+        let cells = [];
+        let numbers = [];
+        let primes = [];
+        let currentPrimeIndex = -1;
+        let isRunning = false;
+        let animationSpeed = parseInt(speedControl.value);
+        let animation = null;
+
+        // Generate unique colors for prime numbers
+        const primeColors = {
+            2: '#FF5252',    // Red
+            3: '#448AFF',    // Blue
+            5: '#4CAF50',    // Green
+            7: '#FFC107',    // Yellow
+            11: '#9C27B0',   // Purple
+            13: '#00BCD4',   // Cyan
+            17: '#FF9800',   // Orange
+            19: '#795548',   // Brown
+            23: '#607D8B',   // Blue-gray
+            29: '#E91E63',   // Pink
+            31: '#673AB7',   // Deep purple
+            // More prime numbers can be added with more colors
+        };
+
+        // Initialize grid
+        function initGrid() {
+            grid.innerHTML = '';
+            cells = [];
+            numbers = Array(gridSize + 1).fill(true);
+            numbers[0] = numbers[1] = false;  // 0 and 1 are not prime numbers
+            primes = [];
+            currentPrimeIndex = -1;
+
+            // Set grid column count
+            const columns = gridSize <= 100 ? 10 : gridSize <= 200 ? 20 : 25;
+            grid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+            // Create cells
+            for (let i = 1; i <= gridSize; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'number-cell';
+                cell.textContent = i;
+                cell.dataset.number = i;
+
+                grid.appendChild(cell);
+                cells.push(cell);
+            }
+
+            updateLegend();
+        }
+
+        // Update legend
+        function updateLegend() {
+            primeColorsDiv.innerHTML = '';
+
+            for (const prime in primeColors) {
+                if (prime <= gridSize) {
+                    const legendItem = document.createElement('div');
+                    legendItem.className = 'legend-item';
+
+                    const colorBox = document.createElement('div');
+                    colorBox.className = 'legend-color';
+                    colorBox.style.backgroundColor = primeColors[prime];
+
+                    const label = document.createElement('span');
+                    label.textContent = prime;
+
+                    legendItem.appendChild(colorBox);
+                    legendItem.appendChild(label);
+                    primeColorsDiv.appendChild(legendItem);
+                }
+            }
+        }
+
+        // Reset demonstration
+        function reset() {
+            if (animation) {
+                clearTimeout(animation);
+                animation = null;
+            }
+
+            isRunning = false;
+            startBtn.textContent = 'Start Demo';
+            stepBtn.disabled = true;
+            gridSize = parseInt(gridSizeSelect.value);
+
+            initGrid();
+            stepInfo.textContent = "Ready to start the sieve process...";
+        }
+
+        // Find the next prime number
+        function findNextPrime() {
+            currentPrimeIndex++;
+
+            if (currentPrimeIndex === 0) {
+                // The first prime number is 2
+                primes.push(2);
+                return 2;
+            }
+
+            // Find the next unmarked number
+            for (let i = primes[primes.length - 1] + 1; i <= gridSize; i++) {
+                if (numbers[i]) {
+                    primes.push(i);
+                    return i;
+                }
+            }
+
+            return -1; // No more prime numbers
+        }
+
+        // Mark composite numbers
+        function markComposites(prime) {
+            return new Promise(resolve => {
+                let i = prime * prime;
+
+                function markNext() {
+                    if (i <= gridSize) {
+                        if (numbers[i]) {
+                            numbers[i] = false;
+
+                            // Add prime factors
+                            const cell = cells[i - 1];
+                            const factors = cell.querySelector('.factors') || document.createElement('div');
+                            factors.className = 'factors';
+
+                            // Decompose composite number
+                            const primeFactors = getPrimeFactors(i);
+                            factors.textContent = primeFactors.join('×');
+
+                            // Mix prime number colors
+                            const uniqueFactors = [...new Set(primeFactors)];
+                            if (uniqueFactors.length === 1) {
+                                cell.style.backgroundColor = primeColors[uniqueFactors[0]] || '#f0f0f0';
+                                cell.style.opacity = '0.7'; // Composite numbers have lighter colors than primes
+                            } else {
+                                // Create gradient color
+                                const gradient = `linear-gradient(135deg, ${uniqueFactors.map((p, index) => 
+                                    `${primeColors[p] || '#f0f0f0'} ${index * (100/uniqueFactors.length)}%, ${primeColors[p] || '#f0f0f0'} ${(index+1) * (100/uniqueFactors.length)}%`
+                                ).join(', ')})`;
+                                cell.style.background = gradient;
+                            }
+
+                            cell.classList.add('composite');
+                            cell.classList.add('eliminating');
+                            cell.appendChild(factors);
+
+                            setTimeout(() => {
+                                cell.classList.remove('eliminating');
+                            }, 500);
+                        }
+
+                        i += prime;
+                        setTimeout(markNext, 1000 / animationSpeed);
+                    } else {
+                        resolve();
+                    }
+                }
+
+                markNext();
+            });
+        }
+
+        // Get all prime factors of a number
+        function getPrimeFactors(num) {
+            const factors = [];
+            let divisor = 2;
+
+            while (num >= 2) {
+                if (num % divisor === 0) {
+                    factors.push(divisor);
+                    num = num / divisor;
+                } else {
+                    divisor++;
+                }
+            }
+
+            return factors;
+        }
+
+        // Execute one step of sieving
+        async function executeStep() {
+            const prime = findNextPrime();
+
+            if (prime === -1) {
+                // Sieving complete
+                isRunning = false;
+                startBtn.textContent = 'Start Demo';
+                stepBtn.disabled = true;
+                stepInfo.textContent = "Sieving complete! All prime numbers have been marked.";
+                return false;
+            }
+
+            // Mark current prime number
+            const primeCell = cells[prime - 1];
+            primeCell.classList.add('prime');
+            primeCell.classList.add('current');
+            primeCell.style.backgroundColor = primeColors[prime] || '#4CAF50';
+
+            stepInfo.textContent = `Current prime: ${prime}, marking all its multiples as composite numbers...`;
+
+            // Mark all multiples
+            await markComposites(prime);
+
+            primeCell.classList.remove('current');
+
+            if (prime * prime > gridSize) {
+                stepInfo.textContent = `Sieving complete! ${prime}'s square (${prime*prime}) exceeds ${gridSize}.`;
+                isRunning = false;
+                startBtn.textContent = 'Start Demo';
+                stepBtn.disabled = true;
+                return false;
+            }
+
+            return true;
+        }
+
+        // Start automatic demonstration
+        async function startDemo() {
+            if (isRunning) {
+                isRunning = false;
+                startBtn.textContent = 'Continue Demo';
+                if (animation) {
+                    clearTimeout(animation);
+                    animation = null;
+                }
+                return;
+            }
+
+            isRunning = true;
+            startBtn.textContent = 'Pause';
+            stepBtn.disabled = true;
+
+            async function next() {
+                if (!isRunning) return;
+
+                const shouldContinue = await executeStep();
+
+                if (shouldContinue && isRunning) {
+                    animation = setTimeout(next, 2000 / animationSpeed);
+                } else {
+                    isRunning = false;
+                    startBtn.textContent = 'Start Demo';
+                }
+            }
+
+            next();
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startDemo);
+
+        stepBtn.addEventListener('click', async () => {
+            stepBtn.disabled = true;
+            await executeStep();
+            stepBtn.disabled = false;
+        });
+
+        resetBtn.addEventListener('click', reset);
+
+        speedControl.addEventListener('input', () => {
+            animationSpeed = parseInt(speedControl.value);
+        });
+
+        gridSizeSelect.addEventListener('change', reset);
+
+        // Initialize
+        reset();
+
+        // Enable step button at start
+        stepBtn.disabled = false;
+    </script>
+</body>
+</html>

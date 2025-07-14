@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archimedes' Polygon Method for Calculating π</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background-color: #4a86e8;
+            color: white;
+            padding: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.2em;
+        }
+
+        .description {
+            max-width: 800px;
+            margin: 20px auto;
+            text-align: justify;
+            line-height: 1.8;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .visualization {
+            flex: 1;
+            min-width: 600px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #canvas-container {
+            position: relative;
+            margin: 0 auto;
+            width: 500px;
+            height: 500px;
+        }
+
+        canvas {
+            border: 1px solid #ddd;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .slider-value {
+            text-align: center;
+            font-weight: bold;
+            color: #4a86e8;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary {
+            background-color: #4a86e8;
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #f1f1f1;
+            color: #333;
+        }
+
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .result-value {
+            font-weight: bold;
+            color: #4a86e8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        @media (max-width: 980px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .visualization, .controls {
+                min-width: 100%;
+            }
+
+            #canvas-container {
+                width: 100%;
+                max-width: 500px;
+                height: auto;
+                aspect-ratio: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Archimedes' Polygon Method for Calculating π</h1>
+        </div>
+
+        <div class="description">
+            <p>Archimedes' polygon method approximates the circumference of a circle using regular polygons, thereby calculating the value of π. This method was invented by the ancient Greek mathematician Archimedes in the 3rd century BC.</p>
+            <p>Archimedes started with a regular hexagon and progressively doubled the number of sides (6→12→24→48→96), calculating the perimeter of a 96-sided polygon to conclude that 3.1408 &lt; π &lt; 3.1429. This was the first scientific estimation of π in human history.</p>
+            <p>This demonstration allows you to visually observe how the perimeter of the polygon approaches the circumference of the circle as the number of sides increases, making the approximation of π increasingly accurate.</p>
+        </div>
+
+        <div class="main-content">
+            <div class="visualization">
+                <h2>Visual Demonstration</h2>
+                <div id="canvas-container">
+                    <canvas id="polygon-canvas" width="500" height="500"></canvas>
+                </div>
+            </div>
+
+            <div class="controls">
+                <h2>Control Panel</h2>
+
+                <div class="control-group">
+                    <label for="sides-slider">Number of Sides:</label>
+                    <input type="range" id="sides-slider" min="3" max="12" value="6" step="1">
+                    <div class="slider-value" id="sides-value">Regular Hexagon (6 sides)</div>
+                    <p><small>Note: Actual number of sides = 2<sup>n</sup> × 3, where n is the slider value minus 3</small></p>
+                </div>
+
+                <div class="results">
+                    <h3>Results</h3>
+                    <div class="result-item">
+                        <span>Inscribed Polygon Perimeter:</span>
+                        <span class="result-value" id="inner-perimeter">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Circumscribed Polygon Perimeter:</span>
+                        <span class="result-value" id="outer-perimeter">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>π Value from Inscribed Polygon:</span>
+                        <span class="result-value" id="inner-pi">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>π Value from Circumscribed Polygon:</span>
+                        <span class="result-value" id="outer-pi">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Estimated Range of π:</span>
+                        <span class="result-value" id="pi-range">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Actual Value of π:</span>
+                        <span class="result-value">3.14159265359...</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Relative Error:</span>
+                        <span class="result-value" id="error-percentage">-</span>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="animate-btn" class="btn-primary">Animate</button>
+                    <button id="reset-btn" class="btn-secondary">Reset</button>
+                </div>
+
+                <table id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Sides</th>
+                            <th>Inscribed π</th>
+                            <th>Circumscribed π</th>
+                            <th>Error</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Historical data will be added dynamically via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Constants definition
+        const REAL_PI = Math.PI;
+        const CANVAS_SIZE = 500;
+        const CIRCLE_RADIUS = 200;
+
+        // Get DOM elements
+        const canvas = document.getElementById('polygon-canvas');
+        const ctx = canvas.getContext('2d');
+        const sidesSlider = document.getElementById('sides-slider');
+        const sidesValue = document.getElementById('sides-value');
+        const innerPerimeter = document.getElementById('inner-perimeter');
+        const outerPerimeter = document.getElementById('outer-perimeter');
+        const innerPi = document.getElementById('inner-pi');
+        const outerPi = document.getElementById('outer-pi');
+        const piRange = document.getElementById('pi-range');
+        const errorPercentage = document.getElementById('error-percentage');
+        const animateBtn = document.getElementById('animate-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const historyTable = document.getElementById('history-table').getElementsByTagName('tbody')[0];
+
+        // Variables definition
+        let animationId = null;
+        let currentStep = 0;
+        let isAnimating = false;
+
+        // Initialization function
+        function init() {
+            drawCanvas(parseInt(sidesSlider.value));
+            updateSliderText();
+
+            // Add event listeners
+            sidesSlider.addEventListener('input', function() {
+                updateSliderText();
+                drawCanvas(parseInt(this.value));
+            });
+
+            animateBtn.addEventListener('click', toggleAnimation);
+            resetBtn.addEventListener('click', reset);
+        }
+
+        // Update slider text
+        function updateSliderText() {
+            const n = parseInt(sidesSlider.value);
+            const actualSides = Math.pow(2, n - 3) * 3;
+            sidesValue.textContent = `Regular ${actualSides}-gon (${actualSides} sides)`;
+        }
+
+        // Draw canvas
+        function drawCanvas(sliderValue) {
+            const sides = Math.pow(2, sliderValue - 3) * 3;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+            // Draw reference grid and axes
+            drawGrid();
+
+            // Draw circle
+            drawCircle();
+
+            // Draw inscribed polygon
+            const innerPoints = drawInnerPolygon(sides);
+
+            // Draw circumscribed polygon
+            const outerPoints = drawOuterPolygon(sides);
+
+            // 计算和显示结果
+            calculateResults(innerPoints, outerPoints);
+
+            // 添加到历史表格
+            addToHistory(sides);
+        }
+
+        // Draw grid
+        function drawGrid() {
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 0.5;
+
+            // Draw grid lines
+            for (let i = 0; i <= CANVAS_SIZE; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(CANVAS_SIZE, i);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, CANVAS_SIZE);
+                ctx.stroke();
+            }
+
+            // Draw axes
+            ctx.strokeStyle = '#aaa';
+            ctx.lineWidth = 1;
+
+            ctx.beginPath();
+            ctx.moveTo(0, CANVAS_SIZE / 2);
+            ctx.lineTo(CANVAS_SIZE, CANVAS_SIZE / 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(CANVAS_SIZE / 2, 0);
+            ctx.lineTo(CANVAS_SIZE / 2, CANVAS_SIZE);
+            ctx.stroke();
+        }
+
+        // Draw circle
+        function drawCircle() {
+            ctx.strokeStyle = '#4a86e8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(CANVAS_SIZE / 2, CANVAS_SIZE / 2, CIRCLE_RADIUS, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // 绘制内接多边形
+        function drawInnerPolygon(sides) {
+            const centerX = CANVAS_SIZE / 2;
+            const centerY = CANVAS_SIZE / 2;
+            const radius = CIRCLE_RADIUS;
+            const angleStep = (2 * Math.PI) / sides;
+
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const points = [];
+
+            for (let i = 0; i < sides; i++) {
+                const angle = i * angleStep;
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+
+                points.push({ x, y });
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+
+            // Close the polygon
+            ctx.closePath();
+            ctx.stroke();
+
+            return points;
+        }
+
+        // 绘制外接多边形
+        function drawOuterPolygon(sides) {
+            const centerX = CANVAS_SIZE / 2;
+            const centerY = CANVAS_SIZE / 2;
+            const radius = CIRCLE_RADIUS;
+            const angleStep = (2 * Math.PI) / sides;
+
+            ctx.strokeStyle = '#2ecc71';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const points = [];
+
+            for (let i = 0; i < sides; i++) {
+                const angle = i * angleStep + (angleStep / 2);
+
+                // Calculate the point on the circle at the current angle
+                const circleX = centerX + radius * Math.cos(angle - (angleStep / 2));
+                const circleY = centerY + radius * Math.sin(angle - (angleStep / 2));
+
+                // Calculate the perpendicular direction to the tangent (normal direction)
+                const normalAngle = angle - (angleStep / 2);
+
+                // Calculate the vertex of the circumscribed polygon (along the normal direction)
+                const distance = radius / Math.cos(angleStep / 2);
+                const x = centerX + distance * Math.cos(normalAngle);
+                const y = centerY + distance * Math.sin(normalAngle);
+
+                points.push({ x, y });
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+
+                // Draw helper line from center to circumscribed polygon vertex (dashed line)
+                ctx.save();
+                ctx.setLineDash([5, 3]);
+                ctx.strokeStyle = '#aaa';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Close the polygon
+            ctx.closePath();
+            ctx.stroke();
+
+            return points;
+        }
+
+        // Calculate distance between two points
+        function distance(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+        // Calculate polygon perimeter
+        function calculatePerimeter(points) {
+            let perimeter = 0;
+            for (let i = 0; i < points.length; i++) {
+                const nextIndex = (i + 1) % points.length;
+                perimeter += distance(points[i], points[nextIndex]);
+            }
+            return perimeter;
+        }
+
+        // Calculate and display results
+        function calculateResults(innerPoints, outerPoints) {
+            // Calculate inscribed polygon perimeter
+            const innerPeri = calculatePerimeter(innerPoints);
+
+            // Calculate circumscribed polygon perimeter
+            const outerPeri = calculatePerimeter(outerPoints);
+
+            // Calculate approximate value of π
+            const innerPiValue = innerPeri / (2 * CIRCLE_RADIUS);
+            const outerPiValue = outerPeri / (2 * CIRCLE_RADIUS);
+
+            // Calculate error
+            const avgPiValue = (innerPiValue + outerPiValue) / 2;
+            const error = Math.abs((avgPiValue - REAL_PI) / REAL_PI * 100);
+
+            // Display results
+            innerPerimeter.textContent = innerPeri.toFixed(6);
+            outerPerimeter.textContent = outerPeri.toFixed(6);
+            innerPi.textContent = innerPiValue.toFixed(8);
+            outerPi.textContent = outerPiValue.toFixed(8);
+            piRange.textContent = `${innerPiValue.toFixed(8)} < π < ${outerPiValue.toFixed(8)}`;
+            errorPercentage.textContent = `${error.toFixed(8)}%`;
+        }
+
+        // Add to history
+        function addToHistory(sides) {
+            const innerPiValue = parseFloat(innerPi.textContent);
+            const outerPiValue = parseFloat(outerPi.textContent);
+            const error = parseFloat(errorPercentage.textContent);
+
+            const row = document.createElement('tr');
+
+            // If the table has more than 10 rows, delete the earliest row
+            if (historyTable.rows.length >= 10) {
+                historyTable.deleteRow(0);
+            }
+
+            row.innerHTML = `
+                <td>${sides}</td>
+                <td>${innerPiValue.toFixed(8)}</td>
+                <td>${outerPiValue.toFixed(8)}</td>
+                <td>${error.toFixed(8)}%</td>
+            `;
+
+            historyTable.appendChild(row);
+        }
+
+        // Animation function
+        function animate() {
+            if (currentStep < 12) {
+                sidesSlider.value = currentStep + 1;
+                updateSliderText();
+                drawCanvas(currentStep + 1);
+                currentStep++;
+                animationId = setTimeout(animate, 1000);
+            } else {
+                isAnimating = false;
+                animateBtn.textContent = 'Animate';
+            }
+        }
+
+        // Toggle animation
+        function toggleAnimation() {
+            if (isAnimating) {
+                // Stop animation
+                clearTimeout(animationId);
+                isAnimating = false;
+                animateBtn.textContent = 'Animate';
+            } else {
+                // Start animation
+                currentStep = 3;  // Start with a triangle
+                isAnimating = true;
+                animateBtn.textContent = 'Stop Animation';
+                animate();
+            }
+        }
+
+        // Reset function
+        function reset() {
+            // Stop any ongoing animation
+            if (isAnimating) {
+                clearTimeout(animationId);
+                isAnimating = false;
+                animateBtn.textContent = 'Animate';
+            }
+
+            // Reset slider and values
+            sidesSlider.value = 6;
+            updateSliderText();
+
+            // Redraw canvas
+            drawCanvas(parseInt(sidesSlider.value));
+
+            // Clear history table
+            while (historyTable.firstChild) {
+                historyTable.removeChild(historyTable.firstChild);
+            }
+        }
+
+        // Initialize after page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
