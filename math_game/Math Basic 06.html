@@ -421,6 +421,7 @@
 let num1, num2, steps, currentStep;
 let answered = false;
 let correct = 0;
+let TotalAnswers = 0;
 let Totalscore = 0;
 let bestScore = localStorage.getItem('bestScore') || 0;
 let killStreak = 0;
@@ -432,7 +433,7 @@ let correctAnswerIndex = null;
 let skipCountingArray = []; // 新增：存储skip counting数据的数组
 
 // 计时器相关变量
-let gameTimeInSeconds = 90; // 5分钟 = 300秒
+let gameTimeInSeconds = 180; // 5分钟 = 300秒
 let remainingTimeInSeconds = gameTimeInSeconds;
 let timerInterval = null;
 let gameActive = false;
@@ -483,7 +484,7 @@ function RandomNumber(x1, x2) {
 }
 // 生成题目
 function generateQuestion() {
-  num1 = RandomNumber(1, 15);
+  num1 = RandomNumber(1, 12);
   num2 = 7;
   document.getElementById('question').innerText = `${num1} × ${num2} = ?`;
   steps = generateSteps(num1, num2);
@@ -645,6 +646,7 @@ function submitAnswer() {
     }
     // 设置已回答状态，点击任何选项都将进入下一题
     answered = true;
+    TotalAnswers++;
   } else {
     if (gameActive) generateQuestion();
   }
@@ -806,7 +808,7 @@ function showGameOverScreen() {
   scoreMsg.style.color = '#ffcc00';
   scoreMsg.style.fontSize = '24px';
   scoreMsg.style.marginBottom = '30px';
-  scoreMsg.textContent = `You got ${correct} correct and ${Math.floor(Totalscore*10)} points!`;
+  scoreMsg.textContent = `Accuracy is ${Math.floor(correct/TotalAnswers*100)}%  and You got ${Math.floor(Totalscore*10)} points!`;
   
   // 创建按钮容器
   const buttonContainer = document.createElement('div');
