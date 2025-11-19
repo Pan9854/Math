@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>素数检测器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result {
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .prime {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .not-prime {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #e67e22;
+            font-weight: bold;
+        }
+
+        .history-section {
+            margin-top: 30px;
+        }
+
+        .history-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .history-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .history-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .clear-history {
+            margin-top: 15px;
+            background-color: #e74c3c;
+        }
+
+        .clear-history:hover {
+            background-color: #c0392b;
+        }
+
+        .info-box {
+            background-color: #e8f4fc;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .info-box p {
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+        }
+        
+        .factors {
+            margin-top: 10px;
+            font-size: 1.2rem;
+            color: #34495e;
+        }
+        
+        .factor-item {
+            display: inline-block;
+            background-color: #e8f4fc;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>素数检测器</h1>
+
+        <div class="info-box">
+            <p>素数（质数）是指大于1的自然数中，除了1和它本身以外不再有其他因数的数。</p>
+            <p>例如：2、3、5、7、11、13等都是素数。</p>
+            <p>合数（非素数）可以分解为若干素数的乘积，这些素数称为该合数的素数因子。</p>
+        </div>
+
+        <div class="input-section">
+            <label for="number-input">请输入一个正整数：</label>
+            <input type="number" id="number-input" placeholder="例如：17" min="1">
+            <button id="check-button">检测是否为素数</button>
+        </div>
+
+        <div class="result-section">
+            <div id="result" class="result">请输入一个数字进行检测</div>
+        </div>
+
+        <div class="history-section">
+            <h2 class="history-title">检测历史</h2>
+            <ul id="history-list" class="history-list">
+                <!-- 历史记录将在这里动态添加 -->
+            </ul>
+            <button id="clear-history" class="clear-history">清除历史记录</button>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const numberInput = document.getElementById('number-input');
+        const checkButton = document.getElementById('check-button');
+        const resultDiv = document.getElementById('result');
+        const historyList = document.getElementById('history-list');
+        const clearHistoryButton = document.getElementById('clear-history');
+
+        // 检测历史记录数组
+        let checkHistory = JSON.parse(localStorage.getItem('primeCheckHistory')) || [];
+
+        // 更新历史记录显示
+        function updateHistoryDisplay() {
+            historyList.innerHTML = '';
+            checkHistory.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'history-item';
+                let factorInfo = '';
+                if (!item.isPrime && item.factors && item.factors.length > 0) {
+                    const factorCount = {};
+                    item.factors.forEach(factor => {
+                        factorCount[factor] = (factorCount[factor] || 0) + 1;
+                    });
+                    
+                    let factorText = '因子: ';
+                    for (const factor in factorCount) {
+                        if (factorCount[factor] === 1) {
+                            factorText += `${factor}, `;
+                        } else {
+                            factorText += `${factor}^${factorCount[factor]}, `;
+                        }
+                    }
+                    factorText = factorText.slice(0, -2); // 移除最后的逗号和空格
+                    factorInfo = `<div style="font-size: 0.9em; color: #7f8c8d;">${factorText}</div>`;
+                }
+                
+                li.innerHTML = `
+                    <div>
+                        <span>数字: ${item.number}</span>
+                        <span class="${item.isPrime ? 'prime' : 'not-prime'}">${item.isPrime ? '是素数' : '不是素数'}</span>
+                    </div>
+                    ${factorInfo}
+                `;
+                historyList.appendChild(li);
+            });
+        }
+
+        // 初始化历史记录显示
+        updateHistoryDisplay();
+
+        // 素数检测函数
+        function isPrime(num) {
+            // 小于等于1的数不是素数
+            if (num <= 1) return false;
+
+            // 2是唯一的偶素数
+            if (num === 2) return true;
+
+            // 大于2的偶数不是素数
+            if (num % 2 === 0) return false;
+
+            // 检查从3到√num的奇数
+            const sqrtNum = Math.sqrt(num);
+            for (let i = 3; i <= sqrtNum; i += 2) {
+                if (num % i === 0) return false;
+            }
+
+            return true;
+        }
+        
+        // 获取数字的素数因子
+        function getPrimeFactors(num) {
+            const factors = [];
+            
+            // 处理2的因子
+            while (num % 2 === 0) {
+                factors.push(2);
+                num = num / 2;
+            }
+            
+            // 处理奇数因子
+            for (let i = 3; i <= Math.sqrt(num); i += 2) {
+                while (num % i === 0) {
+                    factors.push(i);
+                    num = num / i;
+                }
+            }
+            
+            // 如果剩下的num是大于2的质数
+            if (num > 2) {
+                factors.push(num);
+            }
+            
+            return factors;
+        }
+        
+        // 格式化素数因子显示
+        function formatPrimeFactors(factors) {
+            if (factors.length === 0) return "";
+            
+            // 统计每个因子出现的次数
+            const factorCount = {};
+            factors.forEach(factor => {
+                factorCount[factor] = (factorCount[factor] || 0) + 1;
+            });
+            
+            // 格式化显示
+            let result = "<div class=\"factors\">素数因子：";
+            for (const factor in factorCount) {
+                if (factorCount[factor] === 1) {
+                    result += `<span class=\"factor-item\">${factor}</span>`;
+                } else {
+                    result += `<span class=\"factor-item\">${factor}<sup>${factorCount[factor]}</sup></span>`;
+                }
+            }
+            result += "</div>";
+            
+            return result;
+        }
+
+        // 检测按钮点击事件
+        checkButton.addEventListener('click', function() {
+            const inputNumber = parseInt(numberInput.value);
+
+            // 验证输入
+            if (isNaN(inputNumber) || inputNumber < 1) {
+                resultDiv.textContent = '请输入一个大于0的正整数';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            // 检测是否为素数
+            const prime = isPrime(inputNumber);
+
+            // 显示结果
+            if (prime) {
+                resultDiv.textContent = `${inputNumber} 是素数！`;
+                resultDiv.className = 'result prime';
+            } else {
+                // 获取素数因子
+                const factors = getPrimeFactors(inputNumber);
+                resultDiv.innerHTML = `${inputNumber} 不是素数` + formatPrimeFactors(factors);
+                resultDiv.className = 'result not-prime';
+            }
+
+            // 获取素数因子（如果是合数）
+            const factors = prime ? [] : getPrimeFactors(inputNumber);
+            
+            // 添加到历史记录
+            const historyItem = {
+                number: inputNumber,
+                isPrime: prime,
+                factors: factors,
+                timestamp: new Date().toISOString()
+            };
+
+            // 检查是否已存在于历史记录中
+            const existingIndex = checkHistory.findIndex(item => item.number === inputNumber);
+            if (existingIndex !== -1) {
+                // 如果存在，更新它
+                checkHistory[existingIndex] = historyItem;
+            } else {
+                // 如果不存在，添加到开头
+                checkHistory.unshift(historyItem);
+
+                // 限制历史记录数量为10条
+                if (checkHistory.length > 10) {
+                    checkHistory = checkHistory.slice(0, 10);
+                }
+            }
+
+            // 保存到本地存储
+            localStorage.setItem('primeCheckHistory', JSON.stringify(checkHistory));
+
+            // 更新历史记录显示
+            updateHistoryDisplay();
+        });
+
+        // 清除历史记录按钮点击事件
+        clearHistoryButton.addEventListener('click', function() {
+            checkHistory = [];
+            localStorage.removeItem('primeCheckHistory');
+            updateHistoryDisplay();
+        });
+
+        // 输入框回车事件
+        numberInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                checkButton.click();
+            }
+        });
+
+        // 页面加载时聚焦到输入框
+        window.addEventListener('load', function() {
+            numberInput.focus();
+        });
+    </script>
+</body>
+</html>

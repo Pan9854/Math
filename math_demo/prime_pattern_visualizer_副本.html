@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>素数推算演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 素数因子浮层样式 */
+        .factor-tooltip {
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            max-width: 300px;
+            font-size: 0.9rem;
+        }
+        
+        .factor-tooltip h4 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+        
+        .factor-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .factor-item {
+            background-color: #3498db;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .close-tooltip {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        input {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            min-height: 100px;
+        }
+
+        .result {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .prime {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .not-prime {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #e67e22;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background-color: #e8f4fc;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .info-box p {
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+        }
+
+        .pattern-container {
+            margin-top: 20px;
+            overflow-x: auto;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .pattern-row {
+            display: flex;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .number-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .prime-number {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .non-prime-number {
+            background-color: #ecf0f1;
+            color: #34495e;
+        }
+
+        .calculation-info {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #e8f4fc;
+            border-radius: 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+            gap: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+
+        .legend-prime {
+            background-color: #e74c3c;
+        }
+
+        .legend-non-prime {
+            background-color: #ecf0f1;
+        }
+        
+        .prime-array {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .prime-item {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .result-detail {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .result-detail h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .result-detail p {
+            margin-bottom: 10px;
+        }
+        
+        .formula {
+            background-color: #e8f4fc;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>素数推算演示</h1>
+
+        <div class="info-box">
+            <p>这个演示展示了素数序列和最大公因数的计算。输入一个数字P，系统会：</p>
+            <ul>
+                <li>检测P是否为素数</li>
+                <li>如果P是素数，生成素数数组P(n)，其中P(0)=1，P(1)=2</li>
+                <li>计算2到P(n)之间所有素数的乘积M(n)</li>
+            </ul>
+        </div>
+
+        <div class="input-section">
+            <label for="prime-input">请输入一个正整数：</label>
+            <input type="number" id="prime-input" placeholder="例如：31" min="1">
+            
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                <label for="max-num-input">每组最大显示数:</label>
+                <input type="number" id="max-num-input" min="10" max="1000" value="138" style="width: 100px;">
+                <span style="font-size: 0.9rem; color: #666;">(当输入素数大于11时生效)</span>
+            </div>
+            
+            <button id="generate-button">开始推算演示</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>正在计算中，请稍候...</p>
+        </div>
+
+        <div class="result-section">
+            <div id="result" class="result">请输入一个数字开始演示</div>
+            <div id="calculation-info" class="calculation-info" style="display: none;"></div>
+
+            <div id="prime-array-container" style="display: none;">
+                <h3>素数数组 P(n)</h3>
+                <div id="prime-array" class="prime-array"></div>
+            </div>
+            
+            <div id="result-details" style="display: none;">
+                <div class="result-detail">
+                    <h3>素数乘积数组 M(n)</h3>
+                    <p id="gcd-result"></p>
+                    <div id="m-array" class="prime-array"></div>
+                </div>
+                
+                <div class="result-detail">
+                    <h3>素数推演过程</h3>
+                    <div id="pattern-container" class="pattern-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const primeInput = document.getElementById('prime-input');
+        const generateButton = document.getElementById('generate-button');
+        const resultDiv = document.getElementById('result');
+        const calculationInfo = document.getElementById('calculation-info');
+        const primeArrayContainer = document.getElementById('prime-array-container');
+        const primeArrayDiv = document.getElementById('prime-array');
+        const resultDetails = document.getElementById('result-details');
+        const gcdResult = document.getElementById('gcd-result');
+        const mArrayDiv = document.getElementById('m-array');
+        const patternContainer = document.getElementById('pattern-container');
+        const loading = document.getElementById('loading');
+        // 记录推演开始时间（毫秒）
+        let startTime = null;
+
+        // 格式化持续时间（ms -> 人类可读）
+        function formatDuration(ms) {
+            if (ms < 1000) return `${ms.toFixed(0)} 毫秒`;
+            const seconds = ms / 1000;
+            if (seconds < 60) return `${seconds.toFixed(3)} 秒`;
+            const minutes = Math.floor(seconds / 60);
+            const remSec = (seconds % 60).toFixed(3);
+            return `${minutes} 分 ${remSec} 秒`;
+        }
+        
+        // 素数检测函数
+        function isPrime(num) {
+            // 小于等于1的数不是素数
+            if (num <= 1) return false;
+
+            // 2是唯一的偶素数
+            if (num === 2) return true;
+
+            // 大于2的偶数不是素数
+            if (num % 2 === 0) return false;
+
+            // 检查从3到√num的奇数
+            const sqrtNum = Math.sqrt(num);
+            for (let i = 3; i <= sqrtNum; i += 2) {
+                if (num % i === 0) return false;
+            }
+
+            return true;
+        }
+
+        // 获取从2到n的所有素数
+        function getPrimesUpTo(n) {
+            const primes = [];
+            for (let i = 2; i <= n; i++) {
+                if (isPrime(i)) {
+                    primes.push(i);
+                }
+            }
+            return primes;
+        }
+
+        // 计算最大公因数
+        function gcd(a, b) {
+            while (b !== 0) {
+                const temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+
+        // 计算多个数的乘积
+        function productOfNumbers(numbers) {
+            if (numbers.length === 0) return 0;
+            if (numbers.length === 1) return numbers[0];
+            
+            // 使用大数处理，避免溢出
+            let result = BigInt(1);
+            for (let i = 0; i < numbers.length; i++) {
+                result *= BigInt(numbers[i]);
+            }
+            return result;
+        }
+
+        // 生成素数数组P(n)
+        function generatePrimeArray(maxPrime) {
+            // 初始化数组，P(0)=1, P(1)=2
+            const primeArray = [1, 2];
+            
+            // 添加从3到maxPrime的所有素数
+            for (let i = 3; i <= maxPrime; i++) {
+                if (isPrime(i)) {
+                    primeArray.push(i);
+                }
+            }
+            
+            return primeArray;
+        }
+        
+        // 生成素数数组可视化
+        function visualizePrimeArray(primeArray) {
+            primeArrayDiv.innerHTML = '';
+            
+            primeArray.forEach((prime, index) => {
+                const primeItem = document.createElement('div');
+                primeItem.className = 'prime-item';
+                primeItem.textContent = `P(${index})=${prime}`;
+                primeArrayDiv.appendChild(primeItem);
+            });
+        }
+        
+        // 生成素数乘积数组M(n)
+        function generateMArray(primes) {
+            // 初始化数组，M(0)=1
+            const mArray = [1];
+            
+            // 如果没有素数，直接返回
+            if (primes.length === 0) return mArray;
+            
+            // M(1)=2，如果2在素数列表中
+            let product = BigInt(1);
+            for (let i = 0; i < primes.length; i++) {
+                product *= BigInt(primes[i]);
+                mArray.push(product);
+            }
+            
+            return mArray;
+        }
+        
+        // 生成M数组可视化
+        function visualizeMArray(mArray) {
+            mArrayDiv.innerHTML = '';
+            
+            mArray.forEach((value, index) => {
+                const mItem = document.createElement('div');
+                mItem.className = 'prime-item';
+                mItem.textContent = `M(${index})=${value}`;
+                mArrayDiv.appendChild(mItem);
+            });
+        }
+        
+        // 生成素数推演过程
+        function generatePattern(inputNumber, mArray) {
+            // 清空之前的内容
+            patternContainer.innerHTML = '';
+            
+            // 如果没有足够的M数组数据，则不生成
+            if (mArray.length < 2) {
+                patternContainer.innerHTML = '<p>没有足够的数据生成推演过程</p>';
+                return;
+            }
+            
+            // 获取M(n)和M(n-1)
+            const mN = mArray[mArray.length - 1];
+            const mNMinus1 = mArray.length > 1 ? mArray[mArray.length - 2] : 1;
+            
+            // 计算需要显示的组数
+            const rows = Number(mN) / Number(mNMinus1);
+            
+            // 添加说明
+            const infoDiv = document.createElement('div');
+            infoDiv.style.marginBottom = '15px';
+            infoDiv.innerHTML = `<p>每组显示 ${mNMinus1} 个数，共 ${rows} 组</p>`;
+            patternContainer.appendChild(infoDiv);
+            
+            // 添加图例
+            const legendDiv = document.createElement('div');
+            legendDiv.className = 'legend';
+            legendDiv.style.display = 'flex';
+            legendDiv.style.justifyContent = 'center';
+            legendDiv.style.margin = '15px 0';
+            legendDiv.style.gap = '20px';
+            
+            const legendItemPrime = document.createElement('div');
+            legendItemPrime.className = 'legend-item';
+            legendItemPrime.style.display = 'flex';
+            legendItemPrime.style.alignItems = 'center';
+            legendItemPrime.style.gap = '8px';
+            
+            const legendBoxPrime = document.createElement('div');
+            legendBoxPrime.className = 'legend-box';
+            legendBoxPrime.style.width = '20px';
+            legendBoxPrime.style.height = '20px';
+            legendBoxPrime.style.borderRadius = '3px';
+            legendBoxPrime.style.backgroundColor = '#e74c3c';
+            
+            const legendTextPrime = document.createElement('span');
+            legendTextPrime.textContent = '素数';
+            
+            legendItemPrime.appendChild(legendBoxPrime);
+            legendItemPrime.appendChild(legendTextPrime);
+            
+            const legendItemNonPrime = document.createElement('div');
+            legendItemNonPrime.className = 'legend-item';
+            legendItemNonPrime.style.display = 'flex';
+            legendItemNonPrime.style.alignItems = 'center';
+            legendItemNonPrime.style.gap = '8px';
+            
+            const legendBoxNonPrime = document.createElement('div');
+            legendBoxNonPrime.className = 'legend-box';
+            legendBoxNonPrime.style.width = '20px';
+            legendBoxNonPrime.style.height = '20px';
+            legendBoxNonPrime.style.borderRadius = '3px';
+            legendBoxNonPrime.style.backgroundColor = '#ecf0f1';
+            
+            const legendTextNonPrime = document.createElement('span');
+            legendTextNonPrime.textContent = '非素数';
+            
+            legendItemNonPrime.appendChild(legendBoxNonPrime);
+            legendItemNonPrime.appendChild(legendTextNonPrime);
+            
+            // 添加能被大于P(n-1)的素数整除的数的图例
+            const legendItemDivisible = document.createElement('div');
+            legendItemDivisible.className = 'legend-item';
+            legendItemDivisible.style.display = 'flex';
+            legendItemDivisible.style.alignItems = 'center';
+            legendItemDivisible.style.gap = '8px';
+            
+            const legendBoxDivisible = document.createElement('div');
+            legendBoxDivisible.className = 'legend-box';
+            legendBoxDivisible.style.width = '20px';
+            legendBoxDivisible.style.height = '20px';
+            legendBoxDivisible.style.borderRadius = '3px';
+            legendBoxDivisible.style.backgroundColor = '#f39c12';
+            
+            const legendTextDivisible = document.createElement('span');
+            legendTextDivisible.textContent = `只能被>=${primeInput.value}的素数整除的数`;
+            
+            legendItemDivisible.appendChild(legendBoxDivisible);
+            legendItemDivisible.appendChild(legendTextDivisible);
+            
+            legendDiv.appendChild(legendItemPrime);
+            legendDiv.appendChild(legendItemNonPrime);
+            legendDiv.appendChild(legendItemDivisible);
+            
+            patternContainer.appendChild(legendDiv);
+            
+            // 生成数字网格
+            for (let row = 0; row < rows; row++) {
+                const rowContainer = document.createElement('div');
+                rowContainer.style.marginBottom = '15px';
+                
+                // 添加组标题
+                const rowTitle = document.createElement('div');
+                rowTitle.style.marginBottom = '5px';
+                const start = row * Number(mNMinus1) + 1;
+                const end = (row + 1) * Number(mNMinus1);
+                // 创建组标题，包含范围信息
+                const rowTitleHTML = `<strong>第 ${row + 1} 组: ${start} 到 ${end}</strong>`;
+                rowTitle.innerHTML = rowTitleHTML;
+                rowContainer.appendChild(rowTitle);
+                
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'pattern-row';
+                rowDiv.style.display = 'flex';
+                rowDiv.style.marginBottom = '5px';
+                rowDiv.style.flexWrap = 'wrap';
+                
+                let primeCount = 0;
+                let divisibleCount = 0;
+                
+                // 获取大于P(n-1)的素数列表
+                const primeArray = generatePrimeArray(inputNumber);
+                const pNMinus1 = primeArray.length > 1 ? primeArray[primeArray.length - 2] : 1;
+                const largerPrimes = primeArray.filter(p => p > pNMinus1);
+                
+                // 确定是否需要限制每组显示的数字数量
+                const inputPrime = parseInt(inputNumber);
+                const maxNum = parseInt(document.getElementById('max-num-input').value);
+                const shouldLimit = inputPrime > 11;
+                
+                let count = 0; // 计数器，用于限制每组显示的数字数量
+                for (let num = start; num <= end && (!shouldLimit || count < maxNum); num++) {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'number-cell';
+                    cellDiv.style.width = '40px';
+                    cellDiv.style.height = '40px';
+                    cellDiv.style.display = 'flex';
+                    cellDiv.style.alignItems = 'center';
+                    cellDiv.style.justifyContent = 'center';
+                    cellDiv.style.margin = '2px';
+                    cellDiv.style.borderRadius = '4px';
+                    cellDiv.style.fontWeight = 'bold';
+                    cellDiv.style.fontSize = '0.9rem';
+                    
+                    if (isPrime(num)) {
+                        cellDiv.style.backgroundColor = '#e74c3c';
+                        cellDiv.style.color = 'white';
+                        primeCount++;
+                    } else {
+                        // 检查是否能被大于P(n-1)的素数整除
+                        let isDivisibleByLargerPrime = false;
+                        
+                        // 首先检查是否能被P(1)到P(n-1)整除（跳过P(0)=1）
+                        let isDivisibleBySmallerPrime = false;
+                        for (let i = 1; i < primeArray.length - 1; i++) {
+                            if (num % primeArray[i] === 0) {
+                                isDivisibleBySmallerPrime = true;
+                                break;
+                            }
+                        }
+                        
+                        // 如果不能被P(1)到P(n-1)整除，再检查是否能被大于P(n-1)的素数整除
+                        if (!isDivisibleBySmallerPrime) {
+                            const pNMinus1 = primeArray[primeArray.length - 2];
+                            
+                            // 首先检查数组中大于P(n-1)的素数（包括P(n)）
+                            for (let i = primeArray.length - 1; i < primeArray.length; i++) {
+                                const prime = primeArray[i];
+                                if (prime > pNMinus1 && num % prime === 0) {
+                                    isDivisibleByLargerPrime = true;
+                                    break;
+                                }
+                            }
+                            
+                            // 如果还没找到，继续检查大于P(n)的素数
+                            if (!isDivisibleByLargerPrime) {
+                                // 从P(n)+1开始检查，直到num的平方根
+                                const pN = primeArray[primeArray.length - 1];
+                                const sqrtNum = Math.sqrt(num);
+                                
+                                for (let i = pN + 1; i <= sqrtNum; i++) {
+                                    if (isPrime(i) && num % i === 0) {
+                                        isDivisibleByLargerPrime = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (isDivisibleByLargerPrime) {
+                            cellDiv.style.backgroundColor = '#f39c12';
+                            cellDiv.style.color = 'white';
+                            cellDiv.style.cursor = 'pointer';
+                            cellDiv.title = '点击查看素数因子';
+                            
+                            // 添加点击事件，显示素数因子
+                            cellDiv.addEventListener('click', function() {
+                                showPrimeFactors(num, cellDiv);
+                            });
+                            
+                            divisibleCount++;
+                        } else {
+                            cellDiv.style.backgroundColor = '#ecf0f1';
+                            cellDiv.style.color = '#34495e';
+                        }
+                    }
+                    
+                    cellDiv.textContent = num;
+                    rowDiv.appendChild(cellDiv);
+                    count++; // 增加计数器
+                }
+                
+                rowContainer.appendChild(rowDiv);
+                
+                // 如果限制了显示数量，添加提示信息
+                if (shouldLimit && (end - start + 1) > maxNum) {
+                    const noteDiv = document.createElement('div');
+                    noteDiv.style.fontSize = '0.9rem';
+                    noteDiv.style.color = '#666';
+                    noteDiv.style.marginTop = '5px';
+                    noteDiv.textContent = `注意: 该组只显示前 ${maxNum} 个数，共 ${end - start + 1} 个数`;
+                    rowContainer.appendChild(noteDiv);
+                }
+                
+                // 计算所有数字的素数和特殊数（不仅仅是显示的）
+                let allPrimeCount = 0;
+                let allDivisibleCount = 0;
+                
+                for (let num = start; num <= end; num++) {
+                    if (isPrime(num)) {
+                        allPrimeCount++;
+                    } else {
+                        // 检查是否能被大于P(n-1)的素数整除
+                        let isDivisibleByLargerPrime = false;
+
+                        // 首先检查是否能被P(1)到P(n-1)整除（跳过P(0)=1）
+                        let isDivisibleBySmallerPrime = false;
+                        for (let i = 1; i < primeArray.length - 1; i++) {
+                            if (num % primeArray[i] === 0) {
+                                isDivisibleBySmallerPrime = true;
+                                break;
+                            }
+                        }
+
+                        // 如果不能被P(1)到P(n-1)整除，再检查是否能被大于P(n-1)的素数整除
+                        if (!isDivisibleBySmallerPrime) {
+                            const pNMinus1 = primeArray[primeArray.length - 2];
+
+                            // 首先检查数组中大于P(n-1)的素数（包括P(n)）
+                            for (let i = primeArray.length - 1; i < primeArray.length; i++) {
+                                const prime = primeArray[i];
+                                if (prime > pNMinus1 && num % prime === 0) {
+                                    isDivisibleByLargerPrime = true;
+                                    break;
+                                }
+                            }
+
+                            // 如果还没找到，继续检查大于P(n)的素数
+                            if (!isDivisibleByLargerPrime) {
+                                // 从P(n)+1开始检查，直到num的平方根
+                                const pN = primeArray[primeArray.length - 1];
+                                const sqrtNum = Math.sqrt(num);
+
+                                for (let i = pN + 1; i <= sqrtNum; i++) {
+                                    if (isPrime(i) && num % i === 0) {
+                                        isDivisibleByLargerPrime = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (isDivisibleByLargerPrime) {
+                            allDivisibleCount++;
+                        }
+                    }
+                }
+                
+                // 在所有数字单元格添加后，更新组标题显示统计信息
+                setTimeout(() => {
+                    const cells = rowDiv.querySelectorAll('.number-cell');
+                    let primeCount = 0;
+                    let divisibleCount = 0;
+                    
+                    cells.forEach(cell => {
+                        if (cell.style.backgroundColor === 'rgb(231, 76, 60)' || 
+                            cell.style.backgroundColor === '#e74c3c') {
+                            primeCount++;
+                        } else if (cell.style.backgroundColor === 'rgb(243, 156, 18)' || 
+                                  cell.style.backgroundColor === '#f39c12') {
+                            divisibleCount++;
+                        }
+                    });
+                    
+                    // 计算素数和特殊数的总和
+                    let primeSum = 0;
+                    let specialSum = 0;
+                    
+                    cells.forEach(cell => {
+                        const num = parseInt(cell.textContent);
+                        if (cell.style.backgroundColor === 'rgb(231, 76, 60)' || 
+                            cell.style.backgroundColor === '#e74c3c') {
+                            primeSum += num;
+                        } else if (cell.style.backgroundColor === 'rgb(243, 156, 18)' || 
+                                  cell.style.backgroundColor === '#f39c12') {
+                            specialSum += num;
+                        }
+                    });
+                    
+                    // 更新组标题，添加统计信息和总和
+                    rowTitle.innerHTML = `${rowTitleHTML}`;
+                }, 10);
+                
+                // 添加素数计数和能被大于P(n-1)的素数整除的数的计数
+                const countDiv = document.createElement('div');
+                countDiv.style.fontSize = '0.9rem';
+                countDiv.style.color = '#34495e';
+                countDiv.innerHTML = `该组 ${end - start + 1} 个数字中包含 <strong style="color: #e74c3c;">${allPrimeCount}</strong> 个素数，<strong style="color: #f39c12;">${allDivisibleCount}</strong> 个只能被>=${primeInput.value}的素数整除的数，标识总数为<strong style="color: #316fcc;">${allPrimeCount+allDivisibleCount}</strong>个`;
+                
+                rowContainer.appendChild(countDiv);
+                
+                patternContainer.appendChild(rowContainer);
+            }
+        }
+        
+        // 计算素数数组和最大公因数
+        function calculatePrimeArrayAndGCD(inputNumber) {
+            // 显示加载状态
+            loading.style.display = 'block';
+            
+            // 使用setTimeout来避免UI阻塞
+            setTimeout(() => {
+                try {
+                    // 检测输入是否为素数
+                    const isInputPrime = isPrime(inputNumber);
+                    
+                    // 更新结果
+                    if (isInputPrime) {
+                        resultDiv.textContent = `${inputNumber} 是素数`;
+                        resultDiv.className = 'result prime';
+                        
+                        // 生成素数数组
+                        const primeArray = generatePrimeArray(inputNumber);
+                        
+                        // 显示素数数组
+                        visualizePrimeArray(primeArray);
+                        primeArrayContainer.style.display = 'block';
+                        
+                        // 获取从2到输入数字的所有素数
+                        const primes = getPrimesUpTo(inputNumber);
+                        
+                        // 计算素数乘积
+                        const m = primes.length > 0 ? productOfNumbers(primes) : 0;
+                        
+                        // 显示计算信息
+                        calculationInfo.innerHTML = `
+                            <p><strong>输入数字:</strong> ${inputNumber}</p>
+                            <p><strong>是否为素数:</strong> 是</p>
+                            <p><strong>素数数组长度:</strong> ${primeArray.length}</p>
+                            <p><strong>2到${inputNumber}之间的素数:</strong> [${primes.join(', ')}]</p>
+                        `;
+                        calculationInfo.style.display = 'block';
+                        
+                        // 生成M数组
+                        const mArray = generateMArray(primes);
+                        
+                        // 显示素数乘积结果
+                        const finalProduct = mArray.length > 0 ? mArray[mArray.length - 1] : 0;
+                        gcdResult.textContent = `2到${inputNumber}之间所有素数的乘积 M(n) = ${finalProduct}`;
+                        
+                        // 显示M数组
+                        visualizeMArray(mArray);
+                        
+                        // 生成素数推演过程
+                        generatePattern(inputNumber, mArray);
+                        
+                        // 显示结果详情
+                        resultDetails.style.display = 'block';
+                    } else {
+                        resultDiv.textContent = `${inputNumber} 不是素数`;
+                        resultDiv.className = 'result not-prime';
+                        
+                        // 隐藏素数数组和结果详情
+                        primeArrayContainer.style.display = 'none';
+                        resultDetails.style.display = 'none';
+                        
+                        // 显示基本计算信息
+                        calculationInfo.innerHTML = `
+                            <p><strong>输入数字:</strong> ${inputNumber}</p>
+                            <p><strong>是否为素数:</strong> 否</p>
+                        `;
+                        calculationInfo.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('计算过程中出错:', error);
+                    resultDiv.textContent = '计算过程中发生错误，请重试';
+                    resultDiv.className = 'result error';
+                } finally {
+                    // 计算并显示推演耗时（如果有开始时间）
+                    if (startTime !== null) {
+                        const elapsedMs = performance.now() - startTime;
+                        // 将耗时追加到 calculationInfo 中（如果它当前可见）
+                        if (calculationInfo) {
+                            calculationInfo.innerHTML += `<p><strong>推演耗时:</strong> ${formatDuration(elapsedMs)}</p>`;
+                            calculationInfo.style.display = 'block';
+                        }
+                        // 重置开始时间
+                        startTime = null;
+                    }
+                    // 隐藏加载状态
+                    loading.style.display = 'none';
+                }
+            }, 100);
+        }
+
+        // 生成按钮点击事件
+        generateButton.addEventListener('click', function() {
+            // 点击时记录开始时间
+            startTime = performance.now();
+             const inputNumber = parseInt(primeInput.value);
+
+             // 验证输入
+             if (isNaN(inputNumber) || inputNumber < 1) {
+                 resultDiv.textContent = '请输入一个大于0的正整数';
+                 resultDiv.className = 'result error';
+                 calculationInfo.style.display = 'none';
+                 primeArrayContainer.style.display = 'none';
+                 resultDetails.style.display = 'none';
+                // 非法输入，重置开始时间
+                startTime = null;
+                 return;
+             }
+
+             // 限制输入大小，避免计算量过大
+             if (inputNumber > 1000) {
+                 resultDiv.textContent = '请输入不超过1000的数字，以确保计算性能';
+                 resultDiv.className = 'result error';
+                 calculationInfo.style.display = 'none';
+                 primeArrayContainer.style.display = 'none';
+                 resultDetails.style.display = 'none';
+                // 超出范围，重置开始时间
+                startTime = null;
+                 return;
+             }
+
+             // 计算素数数组和最大公因数
+             calculatePrimeArrayAndGCD(inputNumber);
+         });
+
+        // 输入框回车事件
+        primeInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                generateButton.click();
+            }
+        });
+
+        // 页面加载时聚焦到输入框
+        window.addEventListener('load', function() {
+            primeInput.focus();
+        });
+        
+        // 显示素数因子的函数
+        function showPrimeFactors(number, element) {
+            // 移除已存在的浮层
+            const existingTooltips = document.querySelectorAll('.factor-tooltip');
+            existingTooltips.forEach(tooltip => tooltip.remove());
+            
+            // 获取素数因子
+            const factors = getPrimeFactors(number);
+            
+            // 创建浮层
+            const tooltip = document.createElement('div');
+            tooltip.className = 'factor-tooltip';
+            
+            // 添加标题
+            const title = document.createElement('h4');
+            title.textContent = `${number} 的素数因子`;
+            tooltip.appendChild(title);
+            
+            // 添加因子列表
+            const factorList = document.createElement('div');
+            factorList.className = 'factor-list';
+            
+            factors.forEach(factor => {
+                const factorItem = document.createElement('span');
+                factorItem.className = 'factor-item';
+                factorItem.textContent = factor;
+                factorList.appendChild(factorItem);
+            });
+            
+            tooltip.appendChild(factorList);
+            
+            // 添加关闭按钮
+            const closeButton = document.createElement('button');
+            closeButton.className = 'close-tooltip';
+            closeButton.innerHTML = '&times;';
+            closeButton.addEventListener('click', function() {
+                tooltip.remove();
+            });
+            tooltip.appendChild(closeButton);
+            
+            // 计算浮层位置
+            const rect = element.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+            
+            // 设置浮层位置，确保在视口内可见
+            let left = rect.left + scrollLeft;
+            let top = rect.bottom + scrollTop + 5;
+            
+            // 检查是否超出视口右侧
+            if (left + 300 > window.innerWidth + scrollLeft) {
+                left = rect.right + scrollLeft - 300;
+            }
+            
+            // 检查是否超出视口底部
+            if (top + 150 > window.innerHeight + scrollTop) {
+                top = rect.top + scrollTop - 155;
+            }
+            
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+            
+            // 添加到文档中
+            document.body.appendChild(tooltip);
+            
+            // 点击页面其他地方关闭浮层
+            setTimeout(() => {
+                document.addEventListener('click', function closeTooltip(e) {
+                    if (!tooltip.contains(e.target) && e.target !== element) {
+                        tooltip.remove();
+                        document.removeEventListener('click', closeTooltip);
+                    }
+                });
+            }, 100);
+        }
+        
+        // 获取素数因子的函数
+        function getPrimeFactors(number) {
+            const factors = [];
+            let n = number;
+            
+            // 处理2的因子
+            while (n % 2 === 0) {
+                factors.push(2);
+                n = n / 2;
+            }
+            
+            // 处理奇数因子
+            for (let i = 3; i <= Math.sqrt(n); i += 2) {
+                while (n % i === 0) {
+                    factors.push(i);
+                    n = n / i;
+                }
+            }
+            
+            // 如果剩余的数是大于2的素数
+            if (n > 2) {
+                factors.push(n);
+            }
+            
+            return factors;
+        }
+    </script>
+</body>
+</html>
