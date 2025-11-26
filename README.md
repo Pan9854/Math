@@ -32,12 +32,11 @@ KEY FEATURES
    the mental math logic.
    
    [Example from the app]
-   Question: 43 x 47
-   Hint Logic: Since the tens digit is the same (4) and units 
-   add up to 10 (3+7):
-   Step 1: 4 x (4 + 1) x 100 = 2000
-   Step 2: 3 x 7 = 21
-   Result: 2000 + 21 = 2021
+   - Question: 43 x 47
+   - Hint Logic: Since the tens digit is the same (4) and units add up to 10 (3+7)
+   - Step 1: 4 x (4 + 1) x 100 = 2000
+   - Step 2: 3 x 7 = 21
+   - Result: 2000 + 21 = 2021
 
 3. Gamified Experience
    - Math Buddies: Solve problems alongside cute avatars (like 
