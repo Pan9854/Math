@@ -1,4 +1,4 @@
-==============MATH CHALLENGE HUB==============
+===========MATH CHALLENGE HUB===========
 ================================================================
 
 Website URL: https://pan9854.github.io/Math/
