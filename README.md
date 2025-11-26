@@ -1,5 +1,4 @@
-================================================================
-                       MATH CHALLENGE HUB
+==============MATH CHALLENGE HUB==============
 ================================================================
 
 Website URL: https://pan9854.github.io/Math/
@@ -76,6 +75,5 @@ TECHNOLOGY STACK
 - JavaScript: Logic for generating problems and hints.
 - GitHub Pages: Hosting platform.
 
-================================================================
 (C) 2025 Math Challenge Hub | Learn Joyfully, Challenge Yourself
 ================================================================
