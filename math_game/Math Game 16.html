@@ -389,8 +389,8 @@
   <svg viewBox="0 0 200 250">
     <defs>
       <linearGradient id="pikachuGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#4169e1"/>
-        <stop offset="100%" style="stop-color:#9370db"/>
+        <stop offset="0%" style="stop-color:#32CD32"/>
+        <stop offset="100%" style="stop-color:#00CED1"/>
       </linearGradient>
     </defs>
     <!-- 尾巴 -->
@@ -421,7 +421,6 @@
 let num1, num2, steps, currentStep;
 let answered = false;
 let correct = 0;
-let TotalAnswers = 0;
 let Totalscore = 0;
 let bestScore = localStorage.getItem('bestScore') || 0;
 let killStreak = 0;
@@ -432,7 +431,7 @@ let selectedOption = null;
 let correctAnswerIndex = null;
 
 // 计时器相关变量
-let gameTimeInSeconds = 90; // 5分钟 = 300秒
+let gameTimeInSeconds = 180; // 5分钟 = 300秒
 let remainingTimeInSeconds = gameTimeInSeconds;
 let timerInterval = null;
 let gameActive = false;
@@ -483,8 +482,10 @@ function RandomNumber(x1, x2) {
 }
 // 生成题目
 function generateQuestion() {
-  num1 = RandomNumber(1, 15);
-  num2 = Math.floor(Math.random() * 9) + 1;
+  let tens = RandomNumber(10,19); // 十位数
+  let ones = Math.floor(Math.random() * 9) + 1; // 个位数
+  num1 = tens * 10 + ones; // 第一个数
+  num2 = tens * 10 + (10 - ones); // 第二个数
   document.getElementById('question').innerText = `${num1} × ${num2} = ?`;
   steps = generateSteps(num1, num2);
   currentStep = 0;
@@ -513,10 +514,9 @@ function generateOptions() {
   while (options.length < 4) {
     // 生成接近正确答案的干扰项
     //console.log('当前正确答案:', correctAnswer);
-    let wrongAnswer = correctAnswer + 10 * Math.floor(Math.random() * 4 - 2);
-    //console.log('当前正确答案:', correctAnswer,'wrongAnswer:', wrongAnswer);
+    let wrongAnswer = correctAnswer + 100 * Math.floor(Math.random() * 4 - 2);
     if (wrongAnswer == correctAnswer || wrongAnswer <= 0) {
-      wrongAnswer = correctAnswer + 10 * (Math.floor(Math.random() * 4) + 1); // 确保干扰项为正数
+      wrongAnswer = correctAnswer + Math.floor(Math.random() * 100); // 确保干扰项为正数
     }
     // 确保不重复且不等于正确答案
     if (wrongAnswer !== correctAnswer && !options.includes(wrongAnswer) && wrongAnswer > 0) {
@@ -569,8 +569,14 @@ function generateOptions() {
 
 // 生成解题步骤
 function generateSteps(a, b) {
-  let sumPart = `${a} x ${b} = ${a * b}`;
-  return [sumPart];
+  let base = Math.floor(b / 10);
+  let add = b % 10;
+  let extra_base =Math.floor(base / 10);
+  let extra_add = base % 10;
+  let firstPart = `${base} x ${base+1} × 100 = ((${base} + ${extra_add+1}) × 100 + ${extra_add} × ${extra_add+1}) × 100 = ${base*(base + 1) * 100}`;
+  let secondPart = `${a % 10} × ${add} = ${(a % 10) * add}`;
+  let sumPart = `${base*(base + 1) * 100} + ${(a % 10) * add} = ${a * b}`;
+  return [firstPart, secondPart, sumPart];
 }
 
 // 显示下一个提示步骤
@@ -636,7 +642,6 @@ function submitAnswer() {
     }
     // 设置已回答状态，点击任何选项都将进入下一题
     answered = true;
-    TotalAnswers++;
   } else {
     if (gameActive) generateQuestion();
   }
@@ -786,7 +791,7 @@ function showGameOverScreen() {
   message.style.marginBottom = '30px';
   message.textContent = 'Time Over!';
   
-      // 显示结束
+  // 显示结束
   const endMsg = document.createElement('div');
   endMsg.style.color = '#ffcc00';
   endMsg.style.fontSize = '24px';
@@ -798,7 +803,7 @@ function showGameOverScreen() {
   scoreMsg.style.color = '#ffcc00';
   scoreMsg.style.fontSize = '24px';
   scoreMsg.style.marginBottom = '30px';
-  scoreMsg.textContent = `Accuracy is ${Math.floor(correct/TotalAnswers*100)}%  and You got ${Math.floor(Totalscore*10)} points!`;
+  scoreMsg.textContent = `You got ${correct} correct and ${Math.floor(Totalscore*10)} points!`;
   
   // 创建按钮容器
   const buttonContainer = document.createElement('div');
@@ -822,7 +827,7 @@ function showGameOverScreen() {
   nextButton.style.backgroundColor = '#4169e1';
   nextButton.textContent = 'Next Level';
   nextButton.onclick = function() {
-    window.location.href = 'Math Game 01.html';
+    window.location.href = 'Math Game 03.html';
   };
   
   // 添加到页面
@@ -841,13 +846,8 @@ function resetGame() {
   Totalscore = 0;
   correct = 0;
   killStreak = 0;
-  TotalAnswers = 0;
-  lastTryTime = null;
   document.getElementById('Totalscore').innerText = '0';
   document.getElementById('trophyDisplay').innerText = '';
-  document.getElementById('lastTryTime').innerText = '--';
-  document.getElementById('remainingTime').innerText = formatTime(gameTimeInSeconds);
-  // 保持bestScore和bestTime不变
   startGameTimer();
   generateQuestion();
 }

@@ -841,8 +841,13 @@ function resetGame() {
   Totalscore = 0;
   correct = 0;
   killStreak = 0;
+  TotalAnswers = 0;
+  lastTryTime = null;
   document.getElementById('Totalscore').innerText = '0';
   document.getElementById('trophyDisplay').innerText = '';
+  document.getElementById('lastTryTime').innerText = '--';
+  document.getElementById('remainingTime').innerText = formatTime(gameTimeInSeconds);
+  // 保持bestScore和bestTime不变
   startGameTimer();
   generateQuestion();
 }
