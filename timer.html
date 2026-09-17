@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="循环计数器">
+<title>循环计数器 Pro</title>
+<style>
+:root{--accent:#4da3ff;--bg:#0b0b0b;--panel:#202020;--text:#fff;--muted:#888}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+body{touch-action:manipulation}.app{position:relative;width:100vw;height:100vh;overflow:hidden;background:radial-gradient(circle at center,#262626 0,#151515 58%,#080808 100%)}
+.top{position:absolute;top:max(10px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));z-index:10;color:#aaa;font-size:12px;line-height:1.5}
+.status{color:#ddd;font-weight:600}.info{color:#777}
+.counter-area{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(61vh,61vw);height:min(61vh,61vw);min-width:190px;min-height:190px;max-width:460px;max-height:460px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#181818;box-shadow:0 0 0 2px #333,0 0 50px rgba(0,0,0,.8);overflow:hidden;cursor:pointer}
+.progress{position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--accent) var(--progress,0deg),#292929 var(--progress,0deg));transition:none}
+.progress:after{content:"";position:absolute;inset:9%;border-radius:50%;background:#181818}
+.counter{position:relative;z-index:2;font-size:clamp(72px,17vw,185px);font-weight:650;line-height:1;letter-spacing:-5px;font-variant-numeric:tabular-nums}
+.subcounter{position:absolute;z-index:3;bottom:13%;width:100%;text-align:center;color:#777;font-size:12px;letter-spacing:.8px}
+.controls{position:absolute;right:max(9px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:20}
+.btn{width:66px;height:49px;border:1px solid #444;border-radius:11px;background:#222;color:#ddd;font-size:12px;line-height:1.25;display:flex;align-items:center;justify-content:center;text-align:center}
+.btn:active{transform:scale(.94)}.btn.active{background:#315b82;border-color:#62b0ff;color:#fff}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}.modal.show{display:flex}
+.panel{width:min(92vw,440px);max-height:92vh;overflow:auto;background:#222;border:1px solid #444;border-radius:18px;padding:20px;box-shadow:0 20px 60px #000}
+.panel h2{margin:0 0 16px;text-align:center;font-size:20px}.row{margin-bottom:16px}.label{display:flex;justify-content:space-between;margin-bottom:7px;color:#ccc;font-size:14px}
+.inputline{display:flex;gap:7px}.inputline input{flex:1;height:44px;background:#111;border:1px solid #444;border-radius:9px;color:#fff;font-size:18px;text-align:center;outline:none}.step{width:45px;border:1px solid #444;background:#333;color:#fff;border-radius:9px;font-size:20px}
+.switchrow{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid #333}.switchrow span{font-size:14px;color:#ccc}
+.switch{width:48px;height:28px;border-radius:20px;background:#555;position:relative;border:0}.switch:after{content:"";position:absolute;width:22px;height:22px;top:3px;left:3px;border-radius:50%;background:#fff;transition:.15s}.switch.on{background:var(--accent)}.switch.on:after{left:23px}
+.actions{display:flex;gap:9px;margin-top:14px}.action{flex:1;height:44px;border:0;border-radius:9px;background:#444;color:#fff}.primary{background:#347fc4}
+.capture{margin-top:7px;padding:8px;background:#151515;border-radius:7px;text-align:center;color:#888;font-size:12px}
+.help{font-size:11px;color:#666;line-height:1.45;margin-top:10px}
+.portrait{display:none;position:fixed;inset:0;z-index:999;background:#111;align-items:center;justify-content:center;text-align:center;color:#ccc}
+@media (orientation:portrait) and (max-width:700px){.portrait{display:flex}.app{display:none}}
+@media(max-height:400px){.counter-area{width:57vh;height:57vh}.btn{width:60px;height:43px}.controls{gap:5px}}
+</style>
+</head>
+<body>
+<div class="portrait"><div><div style="font-size:42px">📱 ↔️</div><br>请将 iPhone 横屏使用</div></div>
+<div class="app">
+  <div class="top">
+    <div class="status" id="status">● 已停止</div>
+    <div class="info">周期 <b id="periodDisplay">16.0</b>s　计数点 <b id="pointsDisplay">4</b></div>
+    <div class="info" id="timeInfo">本周期 0.0s / 16.0s</div>
+  </div>
+  <div class="counter-area" id="counterArea" aria-label="点击开始或暂停">
+    <div class="progress" id="progress"></div>
+    <div class="counter" id="counter">1</div>
+    <div class="subcounter" id="hint">点击开始</div>
+  </div>
+  <div class="controls">
+    <button class="btn" id="settingsBtn">⚙<br>设置</button>
+    <button class="btn" id="countdownBtn">↘<br>倒计</button>
+    <button class="btn" id="percentBtn">%<br>百分比</button>
+    <button class="btn" id="soundBtn">🔊<br>提示音</button>
+    <button class="btn" id="wakeBtn">☀️<br>常亮</button>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+ <div class="panel">
+  <h2>工作参数</h2>
+  <div class="row">
+   <div class="label"><span>周期长度</span><span>秒</span></div>
+   <div class="inputline"><button class="step" id="periodMinus">−</button><input id="periodInput" type="number" min=".1" step=".1" value="16.0"><button class="step" id="periodPlus">＋</button></div>
+  </div>
+  <div class="row">
+   <div class="label"><span>每周期计数点</span><span>1–100</span></div>
+   <div class="inputline"><button class="step" id="pointsMinus">−</button><input id="pointsInput" type="number" min="1" max="100" step="1" value="4"><button class="step" id="pointsPlus">＋</button></div>
+  </div>
+  <div class="switchrow"><span>开始时自动全屏</span><button class="switch" id="fullscreenSwitch"></button></div>
+  <div class="switchrow"><span>计数点声音提示</span><button class="switch" id="soundSwitch"></button></div>
+  <button class="action" id="captureBtn" style="width:100%;margin-top:8px">⏱ 抓取当前时间</button>
+  <div class="capture" id="capturedTime">尚未抓取时间</div>
+  <div class="help">按下抓取按钮开始计时，再次按下停止计时，该时间段将自动设为周期长度。浏览器支持时，常亮功能会阻止屏幕自动休眠。</div>
+  <div class="actions"><button class="action" id="cancelBtn">取消</button><button class="action primary" id="saveBtn">保存并重置</button></div>
+ </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let period=Number(localStorage.getItem("timerPeriod"))||16;
+let points=Number(localStorage.getItem("timerPoints"))||4;
+let running=false,startTime=0,lastIndex=-1,raf=0;
+let countdownMode=localStorage.getItem("countdown")==="1";
+let percentMode=localStorage.getItem("percent")==="1";
+let soundEnabled=localStorage.getItem("sound")!=="0";
+let autoFullscreen=localStorage.getItem("autoFullscreen")==="1";
+let wakeLock=null,audioCtx=null;
+
+function savePrefs(){localStorage.setItem("timerPeriod",period);localStorage.setItem("timerPoints",points);localStorage.setItem("countdown",countdownMode?"1":"0");localStorage.setItem("percent",percentMode?"1":"0");localStorage.setItem("sound",soundEnabled?"1":"0");localStorage.setItem("autoFullscreen",autoFullscreen?"1":"0")}
+function updateHeader(){ $("periodDisplay").textContent=period.toFixed(1);$("pointsDisplay").textContent=points;$("timeInfo").textContent="本周期 0.0s / "+period.toFixed(1)+"s"}
+function resetView(){running=false;if(raf)cancelAnimationFrame(raf);raf=0;lastIndex=-1;$("counter").textContent=countdownMode?points:1;$("progress").style.setProperty("--progress","0deg");$("status").textContent="● 已停止";$("hint").textContent="点击开始";$("timeInfo").textContent="本周期 0.0s / "+period.toFixed(1)+"s"}
+function beep(){if(!soundEnabled)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=880;o.type="sine";g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.08,audioCtx.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.10);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.11)}catch(e){}}
+function vibrate(){if(navigator.vibrate)navigator.vibrate(25)}
+async function requestWake(){try{if("wakeLock" in navigator){wakeLock=await navigator.wakeLock.request("screen");$("wakeBtn").classList.add("active")}}catch(e){}}
+function releaseWake(){if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null}$("wakeBtn").classList.remove("active")}
+async function goFullscreen(){try{if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else if(document.documentElement.webkitRequestFullscreen)document.documentElement.webkitRequestFullscreen()}catch(e){}}
+function start(){running=true;startTime=performance.now();lastIndex=-1;$("status").textContent="● 运行中";$("hint").textContent="再次点击暂停并重置";if(autoFullscreen)goFullscreen();requestWake();audioCtx=audioCtx||(()=>{try{return new (window.AudioContext||window.webkitAudioContext)()}catch(e){return null}})();raf=requestAnimationFrame(tick)}
+function stop(){running=false;if(raf)cancelAnimationFrame(raf);raf=0;releaseWake();resetView()}
+function tick(now){if(!running)return;const elapsed=(now-startTime)/1000,ct=elapsed%period,slot=period/points;let idx=Math.min(points-1,Math.floor(ct/slot));$("counter").textContent=countdownMode?(points-idx):(idx+1);$("timeInfo").textContent="本周期 "+ct.toFixed(1)+"s / "+period.toFixed(1)+"s";if(percentMode)$("progress").style.setProperty("--progress",(ct/period*360)+"deg");else $("progress").style.setProperty("--progress","0deg");if(idx!==lastIndex){if(lastIndex!==-1){beep();vibrate()}lastIndex=idx}raf=requestAnimationFrame(tick)}
+$("counterArea").addEventListener("click",()=>running?stop():start());
+$("settingsBtn").onclick=()=>{$("periodInput").value=period.toFixed(1);$("pointsInput").value=points;syncSwitches();$("modal").classList.add("show")};
+$("cancelBtn").onclick=()=>$("modal").classList.remove("show");
+$("modal").onclick=e=>{if(e.target===$("modal"))$("modal").classList.remove("show")};
+$("saveBtn").onclick=()=>{let p=parseFloat($("periodInput").value),n=parseInt($("pointsInput").value);if(!isFinite(p)||p<.1)p=.1;if(!isFinite(n)||n<1)n=1;period=Math.round(p*10)/10;points=Math.min(100,n);savePrefs();updateHeader();resetView();$("modal").classList.remove("show")};
+$("periodMinus").onclick=()=>{let i=$("periodInput"),v=parseFloat(i.value)||.1;i.value=Math.max(.1,v-.1).toFixed(1)};
+$("periodPlus").onclick=()=>{let i=$("periodInput"),v=parseFloat(i.value)||.1;i.value=(v+.1).toFixed(1)};
+$("pointsMinus").onclick=()=>{let i=$("pointsInput"),v=parseInt(i.value)||1;i.value=Math.max(1,v-1)};
+$("pointsPlus").onclick=()=>{let i=$("pointsInput"),v=parseInt(i.value)||1;i.value=Math.min(100,v+1)};
+$("countdownBtn").onclick=function(){countdownMode=!countdownMode;this.classList.toggle("active",countdownMode);savePrefs();if(!running)$("counter").textContent=countdownMode?points:1};
+$("percentBtn").onclick=function(){percentMode=!percentMode;this.classList.toggle("active",percentMode);savePrefs();if(!percentMode)$("progress").style.setProperty("--progress","0deg")};
+$("soundBtn").onclick=function(){soundEnabled=!soundEnabled;this.classList.toggle("active",soundEnabled);savePrefs();if(soundEnabled){beep();vibrate()}};
+$("wakeBtn").onclick=()=>running?(wakeLock?releaseWake():requestWake()):requestWake();
+let captureStart=0,captureRaf=0;
+function captureTick(){if(!captureStart)return;const el=((performance.now()-captureStart)/1000);$("capturedTime").textContent="计时中… "+el.toFixed(1)+"s（再次按下停止）";captureRaf=requestAnimationFrame(captureTick)}
+$("captureBtn").onclick=()=>{if(!captureStart){captureStart=performance.now();$("captureBtn").textContent="⏱ 再次按下停止计时";captureTick()}else{const elapsed=(performance.now()-captureStart)/1000;const p=Math.round(elapsed*10)/10;$("periodInput").value=p.toFixed(1);$("capturedTime").textContent="计时完成："+p.toFixed(1)+"s → 已设为周期长度";$("captureBtn").textContent="⏱ 抓取当前时间";if(captureRaf)cancelAnimationFrame(captureRaf);captureRaf=0;captureStart=0}};
+$("fullscreenSwitch").onclick=()=>{autoFullscreen=!autoFullscreen;syncSwitches();savePrefs()};
+$("soundSwitch").onclick=()=>{soundEnabled=!soundEnabled;syncSwitches();$("soundBtn").classList.toggle("active",soundEnabled);savePrefs()};
+function syncSwitches(){$("fullscreenSwitch").classList.toggle("on",autoFullscreen);$("soundSwitch").classList.toggle("on",soundEnabled)}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&running)requestWake()});
+$("countdownBtn").classList.toggle("active",countdownMode);$("percentBtn").classList.toggle("active",percentMode);$("soundBtn").classList.toggle("active",soundEnabled);updateHeader();resetView();
+</script>
+</body>
+</html>
