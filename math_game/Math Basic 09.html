@@ -422,6 +422,7 @@ let num1, num2, steps, currentStep;
 let answered = false;
 let correct = 0;
 let TotalAnswers = 0;
+let incorrectAnswers = [];
 let Totalscore = 0;
 let bestScore = localStorage.getItem('bestScore') || 0;
 let killStreak = 0;
@@ -432,7 +433,7 @@ let selectedOption = null;
 let correctAnswerIndex = null;
 
 // 计时器相关变量
-let gameTimeInSeconds = 90; // 5分钟 = 300秒
+let gameTimeInSeconds = 180; // 5分钟 = 300秒
 let remainingTimeInSeconds = gameTimeInSeconds;
 let timerInterval = null;
 let gameActive = false;
@@ -630,6 +631,11 @@ function submitAnswer() {
       }
     } else {
       document.getElementById('feedback').innerHTML = `<div style="color: red;">❌ Oops! Try again!</div>`;
+      incorrectAnswers.push({
+        question: `${num1} × ${num2}`,
+        selectedAnswer: parseInt(document.querySelector('.option-button.selected').textContent, 10),
+        correctAnswer
+      });
       showAnswer();
       angry();
       // 不再更新killStreak显示
@@ -825,14 +831,68 @@ function showGameOverScreen() {
     window.location.href = 'Math Basic 10.html';
   };
   
-  // 添加到页面
-  buttonContainer.appendChild(stayButton);
-  buttonContainer.appendChild(nextButton);
+  // Only offer replay/progression when every answered question was correct.
+  if (correct >= TotalAnswers) {
+    buttonContainer.appendChild(stayButton);
+    buttonContainer.appendChild(nextButton);
+  } else {
+    const reviewButton = document.createElement('button');
+    reviewButton.className = 'btn btn-primary';
+    reviewButton.style.padding = '15px 30px';
+    reviewButton.textContent = 'Review';
+    reviewButton.onclick = function() {
+      let reviewIndex = 0;
+      const reviewStage = document.createElement('div');
+      reviewStage.style.display = 'flex';
+      reviewStage.style.flexDirection = 'column';
+      reviewStage.style.alignItems = 'center';
+      reviewStage.style.gap = '20px';
+
+      const reviewCard = document.createElement('div');
+      reviewCard.style.color = 'white';
+      reviewCard.style.fontSize = '20px';
+      reviewCard.style.textAlign = 'center';
+      reviewCard.style.margin = '0 20px';
+
+      const nextReviewButton = document.createElement('button');
+      nextReviewButton.className = 'btn btn-primary';
+      nextReviewButton.style.padding = '15px 30px';
+      nextReviewButton.textContent = 'Next';
+
+      const showReview = () => {
+        const { question, selectedAnswer, correctAnswer } = incorrectAnswers[reviewIndex];
+        reviewCard.innerHTML = `<div>${question} = ${correctAnswer}</div><div style="color: #ff8a80">Your answer: ${selectedAnswer}</div>`;
+      };
+
+      nextReviewButton.onclick = function() {
+        reviewIndex++;
+        if (reviewIndex < incorrectAnswers.length) {
+          showReview();
+          return;
+        }
+
+        const finalButtons = document.createElement('div');
+        finalButtons.style.display = 'flex';
+        finalButtons.style.gap = '20px';
+        finalButtons.appendChild(stayButton);
+        finalButtons.appendChild(nextButton);
+        reviewStage.replaceWith(finalButtons);
+      };
+
+      showReview();
+      reviewStage.appendChild(reviewCard);
+      reviewStage.appendChild(nextReviewButton);
+      buttonContainer.replaceWith(reviewStage);
+    };
+    buttonContainer.appendChild(reviewButton);
+  }
   overlay.appendChild(message);
   overlay.appendChild(pikachuClone);
   overlay.appendChild(endMsg);
   overlay.appendChild(scoreMsg);
-  overlay.appendChild(buttonContainer);
+  if (buttonContainer.childElementCount > 0) {
+    overlay.appendChild(buttonContainer);
+  }
   document.body.appendChild(overlay);
 }
 
@@ -842,6 +902,7 @@ function resetGame() {
   correct = 0;
   killStreak = 0;
   TotalAnswers = 0;
+  incorrectAnswers = [];
   lastTryTime = null;
   document.getElementById('Totalscore').innerText = '0';
   document.getElementById('trophyDisplay').innerText = '';
