@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f4f7ff">
+<title>Multiplication Flip</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #1d2850;
+    --muted: #7380a4;
+    --purple: #6957e8;
+    --green: #24a875;
+    --red: #e85b68;
+    --tile: #fff;
+  }
+  * { box-sizing: border-box; }
+  html { height: 100%; }
+  body {
+    margin: 0;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--ink);
+    font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(ellipse at 12% 0%, #e7e9ff 0, transparent 36%),
+                radial-gradient(ellipse at 100% 25%, #d9f7f0 0, transparent 30%), #f4f7ff;
+  }
+  button { font: inherit; }
+  .topbar {
+    min-height: 58px; display: flex; align-items: center; justify-content: space-between;
+    padding: 10px clamp(14px, 4vw, 32px); background: rgba(255,255,255,.82);
+    border-bottom: 1px solid #e7eaf6; position: sticky; top: 0; z-index: 4; backdrop-filter: blur(12px);
+  }
+  .home { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 13px; color: var(--ink); text-decoration: none; background: #f0efff; font-size: 20px; }
+  .brand { font-weight: 850; letter-spacing: -.03em; }
+  .top-score { color: var(--muted); font-size: 14px; font-weight: 700; }
+  .top-score strong { color: var(--purple); font-size: 18px; }
+  main {
+    width: min(100%, 900px); min-height: 0; flex: 1; margin: 0 auto;
+    display: flex; flex-direction: column;
+    padding: clamp(6px, 1.5vh, 16px) clamp(10px, 3vw, 24px);
+  }
+  .hud { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .hud-card { background: rgba(255,255,255,.88); border: 1px solid #e7eaf6; border-radius: 16px; padding: 10px 12px; text-align: center; box-shadow: 0 5px 16px #394b7c0a; }
+  .hud-label { font-size: 11px; color: var(--muted); font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+  .hud-value { margin-top: 2px; font-size: 18px; font-weight: 850; font-variant-numeric: tabular-nums; }
+  .question-card { position: relative; overflow: hidden; padding: 20px 18px 16px; border-radius: 22px; color: white; text-align: center; background: linear-gradient(125deg, #6957e8, #8372f6 62%, #9c83f7); box-shadow: 0 12px 28px #6957e833; }
+  .question-card::after { content: "✦"; position: absolute; right: 18px; top: 5px; font-size: 48px; opacity: .16; transform: rotate(15deg); }
+  .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .15em; opacity: .83; }
+  .target { margin: 4px 0 0; font-size: clamp(30px, 7vw, 48px); line-height: 1.1; font-weight: 900; letter-spacing: -.04em; }
+  .target small { font-size: .42em; font-weight: 700; letter-spacing: 0; opacity: .86; }
+  .instruction { margin: 7px 0 0; font-size: 13px; opacity: .92; }
+  .round-progress { display: flex; justify-content: center; gap: 6px; margin-top: 13px; min-height: 10px; }
+  .pip { width: 8px; height: 8px; border: 1px solid #ffffffa8; border-radius: 99px; }
+  .pip.done { background: #c5ffdd; border-color: #c5ffdd; box-shadow: 0 0 9px #c5ffdd; }
+  .board-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 15px 2px 8px; }
+  .board-heading strong { font-size: 14px; }
+  .board-heading span { color: var(--muted); font-size: 12px; }
+  .board-wrap { min-height: 0; flex: 1; display: flex; padding: clamp(4px, 1vw, 9px); background: #e9edfa; border: 1px solid #dfe5f5; border-radius: 18px; box-shadow: inset 0 2px 5px #2838600b; }
+  .board { min-height: 0; flex: 1; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(9, minmax(0, 1fr)); gap: clamp(3px, .8vw, 7px); }
+  .card { position: relative; aspect-ratio: auto; min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: clamp(5px, 1.3vw, 10px); cursor: pointer; perspective: 500px; background: transparent; -webkit-tap-highlight-color: transparent; }
+  .card-inner { position: absolute; inset: 0; display: grid; place-items: center; border-radius: inherit; font-size: clamp(9px, 2.2vw, 17px); font-weight: 850; line-height: 1; transition: transform .35s cubic-bezier(.2,.75,.25,1), background .18s, color .18s; transform-style: preserve-3d; }
+  .card-back { background: linear-gradient(145deg, #fff, #f6f7ff); color: #505d89; border: 1px solid #dce2f4; box-shadow: 0 2px 0 #d4d9ec; }
+  .card-face { display: none; padding: 2px; background: #fff; color: var(--ink); border: 1px solid #dce2f4; box-shadow: 0 2px 0 #d4d9ec; }
+  .card.revealed .card-back { display: none; }
+  .card.revealed .card-face { display: grid; animation: flipIn .28s both; }
+  .card.correct .card-face { background: #dcf8eb; color: #137c55; border-color: #72d3a8; box-shadow: 0 2px 0 #69c99d; }
+  .card.wrong .card-face { background: #ffe4e7; color: #b93043; border-color: #f19aa4; box-shadow: 0 2px 0 #ec8d98; animation: shake .32s; }
+  .card:disabled { cursor: default; }
+  .card:not(:disabled):hover .card-back { transform: translateY(-2px); box-shadow: 0 4px 0 #d4d9ec; }
+  .card:focus-visible { outline: 3px solid #ffbd4a; outline-offset: 2px; z-index: 1; }
+  @keyframes flipIn { from { transform: rotateY(90deg) scale(.86); } to { transform: rotateY(0) scale(1); } }
+  @keyframes shake { 25% { transform: translateX(-4px); } 70% { transform: translateX(4px); } }
+  .below { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-top: 10px; }
+  .feedback { min-height: 22px; color: var(--muted); font-size: 13px; font-weight: 700; }
+  .feedback.good { color: #168458; }
+  .feedback.bad { color: #ca3f4f; }
+  .actions { display: flex; gap: 8px; }
+  .action { border: 0; border-radius: 12px; padding: 10px 13px; color: #5544ce; background: #e9e6ff; font-size: 12px; font-weight: 800; cursor: pointer; }
+  .action:hover { background: #ded9ff; }
+  .action:disabled { opacity: .46; cursor: default; }
+  .tip { flex: 0 0 auto; margin: 8px 2px 0; color: var(--muted); text-align: center; font-size: 11px; }
+  .toast { position: fixed; left: 50%; top: 45%; z-index: 7; transform: translate(-50%, -50%); max-width: calc(100vw - 28px); padding: 12px 22px; border-radius: 999px; color: white; background: #29234f; font-size: clamp(16px, 4vw, 22px); font-weight: 900; text-align: center; box-shadow: 0 12px 35px #17133c4d; animation: toast .95s both; pointer-events: none; }
+  @keyframes toast { 0% { opacity: 0; scale: .65; } 18%, 75% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: .9; } }
+  .overlay { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; overflow-y: auto; padding: max(12px, env(safe-area-inset-top)) 18px max(12px, env(safe-area-inset-bottom)); background: #1e244dcc; backdrop-filter: blur(6px); }
+  .modal { width: min(100%, 390px); max-height: 100%; overflow-y: auto; padding: 27px 22px; border-radius: 24px; text-align: center; background: white; box-shadow: 0 20px 70px #12173d55; }
+  .modal-emoji { font-size: 42px; }
+  .modal h2 { margin: 6px 0; font-size: 26px; }
+  .modal p { color: var(--muted); line-height: 1.55; }
+  .modal .action { padding: 12px 22px; font-size: 14px; color: white; background: var(--purple); }
+  @media (min-width: 700px) { main { padding-top: clamp(8px, 2vh, 20px); } }
+  @media (max-width: 520px) {
+    main { padding-top: 7px; padding-bottom: max(7px, env(safe-area-inset-bottom)); }
+    .topbar { padding-inline: 10px; }
+    .brand { font-size: 14px; }
+    .top-score { font-size: 12px; }
+    .hud { gap: 6px; }
+    .hud-card { padding: 8px 4px; }
+    .hud-label { font-size: 10px; letter-spacing: .04em; }
+    .hud-value { font-size: 16px; }
+    .board-heading strong { font-size: 12px; }
+    .board-heading span { font-size: 11px; }
+    .below { gap: 6px; }
+    .actions { justify-content: flex-end; gap: 5px; }
+    .action { padding: 8px 9px; }
+    .feedback { font-size: 11px; }
+    .tip { line-height: 1.25; }
+  }
+  @media (max-height: 620px) {
+    .topbar { min-height: 46px; padding-block: 4px; }
+    .home { width: 34px; height: 34px; }
+    main { padding-top: 5px; padding-bottom: 5px; }
+    .hud { gap: 6px; margin-bottom: 6px; }
+    .hud-card { padding-block: 4px; }
+    .question-card { padding: 7px 12px 6px; border-radius: 16px; }
+    .eyebrow { font-size: 10px; }
+    .target { font-size: clamp(26px, 6vh, 38px); }
+    .instruction { margin-top: 3px; font-size: 11px; }
+    .round-progress { margin-top: 5px; }
+    .board-heading { margin-top: 6px; margin-bottom: 5px; }
+    .below { margin-top: 6px; }
+    .tip { margin-top: 5px; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="home" href="../index.html" aria-label="Home">⌂</a>
+  <div class="brand">✦ Multiplication Flip</div>
+  <div class="top-score">⭐ <strong id="score">0</strong></div>
+</header>
+<main>
+  <section class="hud" aria-label="Game stats">
+    <div class="hud-card"><div class="hud-label">Round</div><div class="hud-value" id="round">1</div></div>
+    <div class="hud-card"><div class="hud-label">Streak</div><div class="hud-value" id="streak">0 🔥</div></div>
+    <div class="hud-card"><div class="hud-label">Cards Left</div><div class="hud-value" id="cardsLeft">81</div></div>
+  </section>
+
+  <section class="question-card" aria-live="polite">
+    <div class="eyebrow">ROUND TARGET · FIND EVERY MATCH</div>
+    <h1 class="target"><span id="target">12</span> <small>multiplication facts</small></h1>
+    <p class="instruction">Flip cards to find every equation that equals <b id="targetInline">12</b>.</p>
+    <div class="round-progress" id="progress" aria-label="Round progress"></div>
+  </section>
+
+  <div class="board-heading"><strong>🃏 9 × 9 Game Board</strong><span id="found">Found 0 / 4</span></div>
+  <div class="board-wrap"><div class="board" id="board" aria-label="Multiplication game board"></div></div>
+  <div class="below">
+    <div class="feedback" id="feedback" aria-live="polite">Ready? Flip any card to begin!</div>
+    <div class="actions">
+      <button class="action" id="hintButton" type="button">💡 Hint (2)</button>
+      <button class="action" id="restartButton" type="button">↻ Restart</button>
+    </div>
+  </div>
+  <p class="tip">Build a streak for bonus points. Find every match to advance to the next round!</p>
+</main>
+<script>
+(() => {
+  const HINTS_PER_GAME = 2;
+  const products = [...new Set(Array.from({ length: 9 }, (_, a) => Array.from({ length: 9 }, (_, b) => (a + 1) * (b + 1))).flat())];
+  const board = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const roundEl = document.getElementById('round');
+  const streakEl = document.getElementById('streak');
+  const cardsLeftEl = document.getElementById('cardsLeft');
+  const targetEl = document.getElementById('target');
+  const targetInlineEl = document.getElementById('targetInline');
+  const foundEl = document.getElementById('found');
+  const progressEl = document.getElementById('progress');
+  const feedbackEl = document.getElementById('feedback');
+  const hintButton = document.getElementById('hintButton');
+  let target = 12, matching = [], found = new Set(), usedTargets = new Set(), score = 0, round = 1, streak = 0;
+  let hints = HINTS_PER_GAME, locked = false, gameOver = false;
+
+  function makeBoard() {
+    board.replaceChildren();
+    for (let a = 1; a <= 9; a++) {
+      for (let b = 1; b <= 9; b++) {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'card';
+        button.setAttribute('aria-label', `${a} times ${b}. Flip to reveal the answer.`);
+        button.dataset.a = a; button.dataset.b = b;
+        button.innerHTML = `<span class="card-inner card-back" aria-hidden="true">${a}×${b}</span><span class="card-inner card-face" aria-hidden="true"></span>`;
+        button.addEventListener('click', () => flipCard(button));
+        board.appendChild(button);
+      }
+    }
+  }
+
+  function chooseTarget() {
+    const available = products.filter(product => !usedTargets.has(product) && [...board.children].some(card => !card.disabled && Number(card.dataset.a) * Number(card.dataset.b) === product));
+    if (!available.length) return false;
+    const next = available[Math.floor(Math.random() * available.length)];
+    target = next;
+    usedTargets.add(target);
+    matching = [];
+    [...board.children].forEach(card => {
+      const a = Number(card.dataset.a), b = Number(card.dataset.b);
+      if (!card.disabled && a * b === target) matching.push(card);
+    });
+    found.clear();
+    targetEl.textContent = target; targetInlineEl.textContent = target;
+    updateProgress();
+  }
+
+  function updateProgress() {
+    foundEl.textContent = `Found ${found.size} / ${matching.length}`;
+    progressEl.replaceChildren();
+    matching.forEach((_, index) => {
+      const pip = document.createElement('span'); pip.className = `pip${index < found.size ? ' done' : ''}`; pip.setAttribute('aria-hidden', 'true'); progressEl.appendChild(pip);
+    });
+  }
+
+  function setFeedback(message, type = '') { feedbackEl.textContent = message; feedbackEl.className = `feedback${type ? ` ${type}` : ''}`; }
+
+  function flipCard(card) {
+    if (locked || gameOver || card.disabled || card.classList.contains('revealed')) return;
+    const a = Number(card.dataset.a), b = Number(card.dataset.b), answer = a * b;
+    const face = card.querySelector('.card-face');
+    //card.classList.add('revealed'); face.textContent = `${a}×${b}=${answer}`;
+    card.classList.add('revealed'); face.textContent = `${answer}`;
+    card.disabled = true;
+    cardsLeftEl.textContent = [...board.children].filter(tile => !tile.disabled).length;
+    card.setAttribute('aria-label', `${a} times ${b} equals ${answer}`);
+    if (answer === target) {
+      card.classList.add('correct'); found.add(card);
+      streak++;
+      const points = 10 + Math.min(streak - 1, 10) * 2;
+      score += points; scoreEl.textContent = score; streakEl.textContent = `${streak} 🔥`;
+      setFeedback(`Correct! ${a} × ${b} = ${answer}. +${points} points`, 'good');
+      if (streak === 3 || streak === 5 || (streak > 5 && streak % 5 === 0)) showToast(`${streak} in a row! Great job ✨`);
+      updateProgress();
+      if (found.size === matching.length) finishRound();
+    } else {
+      card.classList.add('wrong'); streak = 0; streakEl.textContent = '0 🔥';
+      setFeedback(`${a} × ${b} = ${answer}. Keep looking!`, 'bad');
+      if ([...board.children].every(tile => tile.disabled)) finishGame();
+    }
+  }
+
+  function finishRound() {
+    const bonus = matching.length * 5;
+    score += bonus; scoreEl.textContent = score;
+    setFeedback(`Perfect! You found all ${matching.length} matches. Bonus: +${bonus} points 🎉`, 'good');
+    showToast('Round complete! 🎊');
+    if ([...board.children].every(card => card.disabled)) { finishGame(); return; }
+    round++; roundEl.textContent = round;
+    if (!chooseTarget()) {
+      // A new target is only exhausted after all cards for every used product
+      // have been revealed. Keep completion tied to all 81 revealed cards.
+      finishGame();
+      return;
+    }
+    locked = false;
+    setFeedback('New target! Keep your streak going!');
+  }
+
+  function finishGame() {
+    if (![...board.children].every(card => card.disabled)) return;
+    gameOver = true; locked = true;
+    const overlay = document.createElement('div'); overlay.className = 'overlay';
+    const modal = document.createElement('div'); modal.className = 'modal';
+    modal.innerHTML = `<div class="modal-emoji">🎉</div><h2>All cards revealed!</h2><p>You explored the multiplication board across <b>${round}</b> rounds and scored <b>${score}</b> points.</p>`;
+    const play = document.createElement('button'); play.type = 'button'; play.className = 'action'; play.textContent = 'Play Again';
+    play.addEventListener('click', () => { overlay.remove(); startGame(); }); modal.appendChild(play); overlay.appendChild(modal); document.body.appendChild(overlay);
+  }
+
+  function showToast(message) {
+    const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = message;
+    document.body.appendChild(toast); window.setTimeout(() => toast.remove(), 1000);
+  }
+
+  function useHint() {
+    if (gameOver || locked || hints <= 0) return;
+    const unseen = matching.filter(card => !found.has(card) && !card.classList.contains('revealed'));
+    if (!unseen.length) return;
+    hints--; hintButton.textContent = `💡 Hint (${hints})`; hintButton.disabled = hints === 0;
+    const card = unseen[Math.floor(Math.random() * unseen.length)];
+    card.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.14)' }, { transform: 'scale(1)' }], { duration: 550 });
+    setFeedback(`Hint: the glowing card is one of the correct answers!`);
+    window.setTimeout(() => card.classList.remove('hinted'), 1200);
+    card.classList.add('hinted');
+    card.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.3)' }, { filter: 'brightness(1)' }], { duration: 700, iterations: 2 });
+  }
+
+  function startGame() {
+    score = 0; round = 1; streak = 0; hints = HINTS_PER_GAME; gameOver = false; locked = false; usedTargets.clear();
+    scoreEl.textContent = '0'; roundEl.textContent = '1'; streakEl.textContent = '0 🔥'; cardsLeftEl.textContent = '81';
+    hintButton.textContent = `💡 Hint (${hints})`; hintButton.disabled = false;
+    makeBoard(); chooseTarget(); setFeedback('Ready? Flip any card to begin!');
+  }
+
+  hintButton.addEventListener('click', useHint);
+  document.getElementById('restartButton').addEventListener('click', startGame);
+  startGame();
+})();
+</script>
+</body>
+</html>
